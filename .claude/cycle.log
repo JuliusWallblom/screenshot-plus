@@ -2,3 +2,4 @@
 [2025-12-12 21:31:11] Implemented ScreenshotMonitor to detect new screenshot files using DispatchSource filesystem monitoring
 [2025-12-12 21:32:23] Implemented AnnotationWindowState and AnnotationView to display screenshot with dark toolbar
 [2025-12-12 21:33:48] Implemented Annotation model, CanvasState, and DrawingCanvasView for annotation overlay
+[2025-12-12 21:35:04] Built toolbar with tool selection buttons, stroke width picker, and color picker
