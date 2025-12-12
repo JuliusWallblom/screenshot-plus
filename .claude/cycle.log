@@ -8,3 +8,4 @@
 [2025-12-12 21:38:08] Implemented ImageExporter for rendering annotations and copying to clipboard
 [2025-12-12 21:39:31] Added MenuBarController for status item with quit menu
 [2025-12-12 21:40:22] Added CropState for managing crop region and applying crop to images
+[2025-12-12 21:43:11] Fixed AnnotationView to integrate AnnotationToolbarView and DrawingCanvasView overlay

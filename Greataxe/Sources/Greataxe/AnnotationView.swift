@@ -3,33 +3,24 @@ import AppKit
 
 struct AnnotationView: View {
     let state: AnnotationWindowState
+    @State var canvasState = CanvasState()
 
     var body: some View {
         VStack(spacing: 0) {
-            AnnotationToolbar()
-            AnnotationCanvas(state: state)
+            AnnotationToolbarView(canvasState: canvasState)
+            AnnotationCanvasWithOverlay(state: state, canvasState: canvasState)
         }
         .background(Color.black)
     }
 }
 
-struct AnnotationToolbar: View {
-    var body: some View {
-        HStack(spacing: 12) {
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color(nsColor: NSColor.windowBackgroundColor).opacity(0.95))
-    }
-}
-
-struct AnnotationCanvas: View {
+struct AnnotationCanvasWithOverlay: View {
     let state: AnnotationWindowState
+    @Bindable var canvasState: CanvasState
     @State private var image: NSImage?
 
     var body: some View {
-        Group {
+        ZStack {
             if let image = image {
                 Image(nsImage: image)
                     .resizable()
@@ -37,6 +28,8 @@ struct AnnotationCanvas: View {
             } else {
                 Color.black
             }
+
+            DrawingCanvasView(canvasState: canvasState)
         }
         .onAppear {
             image = state.loadImage()
