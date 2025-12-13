@@ -1,8 +1,7 @@
 import AppKit
 import SwiftUI
 
-@Observable
-final class AnnotationWindowState {
+final class AnnotationWindowState: ObservableObject {
     let imageURL: URL
 
     init(imageURL: URL) {

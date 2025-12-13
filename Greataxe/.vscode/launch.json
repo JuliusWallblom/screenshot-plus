@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Greataxe}",
+            "name": "Debug Greataxe",
+            "program": "${workspaceFolder:Greataxe}/.build/debug/Greataxe",
+            "preLaunchTask": "swift: Build Debug Greataxe"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Greataxe}",
+            "name": "Release Greataxe",
+            "program": "${workspaceFolder:Greataxe}/.build/release/Greataxe",
+            "preLaunchTask": "swift: Build Release Greataxe"
+        }
+    ]
+}

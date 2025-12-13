@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct AnnotationToolbarView: View {
-    @Bindable var canvasState: CanvasState
+    @ObservedObject var canvasState: CanvasState
+    var onSave: (() -> Void)?
+    var onCopy: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 4) {
@@ -23,9 +25,38 @@ struct AnnotationToolbarView: View {
                 .frame(height: 24)
 
             ColorPickerButton(color: $canvasState.strokeColor)
+
+            Spacer()
+
+            if onCopy != nil || onSave != nil {
+                Divider()
+                    .frame(height: 24)
+            }
+
+            if let onCopy = onCopy {
+                Button(action: onCopy) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .help("Copy to Clipboard")
+            }
+
+            if let onSave = onSave {
+                Button(action: onSave) {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+                .help("Save")
+            }
         }
-        .padding(.horizontal, 12)
+        .padding(.leading, 78)
+        .padding(.trailing, 12)
         .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, minHeight: 52)
         .background(Color(nsColor: NSColor.windowBackgroundColor))
     }
 }
@@ -86,37 +117,9 @@ struct StrokeWidthPicker: View {
 struct ColorPickerButton: View {
     @Binding var color: Color
 
-    private let presetColors: [Color] = [
-        .red, .orange, .yellow, .green, .blue, .purple, .black, .white
-    ]
-
     var body: some View {
-        Menu {
-            ForEach(presetColors, id: \.self) { presetColor in
-                Button(action: { color = presetColor }) {
-                    HStack {
-                        Circle()
-                            .fill(presetColor)
-                            .frame(width: 16, height: 16)
-                        if color == presetColor {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(color)
-                    .frame(width: 18, height: 18)
-                    .overlay(Circle().stroke(Color.gray, lineWidth: 1))
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8))
-            }
+        ColorPicker("", selection: $color, supportsOpacity: false)
+            .labelsHidden()
             .frame(width: 44, height: 28)
-            .background(Color(nsColor: NSColor.controlBackgroundColor))
-            .cornerRadius(6)
-        }
-        .buttonStyle(.plain)
     }
 }

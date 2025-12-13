@@ -2,7 +2,11 @@ import AppKit
 import SwiftUI
 
 final class ImageExporter {
-    func renderImage(_ baseImage: NSImage, with annotations: [Annotation]) -> NSImage? {
+    func renderImage(_ baseImage: NSImage, with annotations: [Annotation], paddingOptions: PaddingOptions = PaddingOptions()) -> NSImage? {
+        if paddingOptions.enabled {
+            return renderImageWithPadding(baseImage, annotations: annotations, options: paddingOptions)
+        }
+
         let size = baseImage.size
         let image = NSImage(size: size)
 
@@ -17,6 +21,75 @@ final class ImageExporter {
         image.unlockFocus()
 
         return image
+    }
+
+    private func renderImageWithPadding(_ baseImage: NSImage, annotations: [Annotation], options: PaddingOptions) -> NSImage? {
+        let padding = options.amount
+        let cornerRadius = options.cornerRadius
+        let imageSize = baseImage.size
+        let totalSize = NSSize(
+            width: imageSize.width + padding * 2,
+            height: imageSize.height + padding * 2
+        )
+
+        let image = NSImage(size: totalSize)
+        image.lockFocus()
+
+        // Draw gradient background
+        let gradientRect = NSRect(origin: .zero, size: totalSize)
+        drawGradient(in: gradientRect, gradient: options.gradient)
+
+        // Draw image with rounded corners and shadow
+        let imageRect = NSRect(
+            x: padding,
+            y: padding,
+            width: imageSize.width,
+            height: imageSize.height
+        )
+
+        // Draw image with rounded corners and optional shadow
+        let context = NSGraphicsContext.current?.cgContext
+        context?.saveGState()
+
+        if options.shadow.enabled {
+            context?.setShadow(
+                offset: CGSize(width: 0, height: -options.shadow.offsetY),
+                blur: options.shadow.radius,
+                color: NSColor.black.withAlphaComponent(options.shadow.opacity).cgColor
+            )
+        }
+
+        // Draw rounded rect background to cast the shadow
+        let clipPath = NSBezierPath(roundedRect: imageRect, xRadius: cornerRadius, yRadius: cornerRadius)
+        NSColor.white.setFill()
+        clipPath.fill()
+
+        context?.restoreGState()
+
+        // Now draw the actual image clipped to rounded rect
+        context?.saveGState()
+        clipPath.addClip()
+        baseImage.draw(in: imageRect)
+        context?.restoreGState()
+
+        // Draw annotations offset by padding
+        for annotation in annotations {
+            drawAnnotation(annotation, offset: CGPoint(x: padding, y: padding))
+        }
+
+        image.unlockFocus()
+
+        return image
+    }
+
+    private func drawGradient(in rect: NSRect, gradient: GradientBackground) {
+        let startColor = NSColor(gradient.startColor)
+        let endColor = NSColor(gradient.endColor)
+
+        guard let nsGradient = NSGradient(starting: startColor, ending: endColor) else { return }
+
+        let angle = gradient.angle
+        nsGradient.draw(in: rect, angle: CGFloat(angle))
     }
 
     func copyToClipboard(_ image: NSImage) -> Bool {
@@ -40,44 +113,90 @@ final class ImageExporter {
         }
     }
 
-    private func drawAnnotation(_ annotation: Annotation) {
+    private func drawAnnotation(_ annotation: Annotation, offset: CGPoint = .zero) {
+        // Text handles its own rotation
+        if annotation.type == .text {
+            drawText(annotation, offset: offset)
+            return
+        }
+
+        let context = NSGraphicsContext.current?.cgContext
+        let offsetRect = annotation.boundingRect.offsetBy(dx: offset.x, dy: offset.y)
+        let center = CGPoint(x: offsetRect.midX, y: offsetRect.midY)
+
+        // Apply rotation
+        if annotation.rotation != 0 {
+            context?.saveGState()
+            context?.translateBy(x: center.x, y: center.y)
+            context?.rotate(by: annotation.rotation)
+            context?.translateBy(x: -center.x, y: -center.y)
+        }
+
         let path = NSBezierPath()
         let nsColor = NSColor(annotation.strokeColor)
         nsColor.setStroke()
         path.lineWidth = annotation.strokeWidth
 
+        let offsetStart = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
+        let offsetEnd = CGPoint(x: annotation.endPoint.x + offset.x, y: annotation.endPoint.y + offset.y)
+
         switch annotation.type {
         case .rectangle:
-            path.appendRect(annotation.boundingRect)
+            path.appendRect(offsetRect)
         case .oval:
-            path.appendOval(in: annotation.boundingRect)
+            path.appendOval(in: offsetRect)
         case .line:
-            path.move(to: annotation.startPoint)
-            path.line(to: annotation.endPoint)
+            path.move(to: offsetStart)
+            path.line(to: offsetEnd)
         case .arrow:
-            drawArrow(path: path, from: annotation.startPoint, to: annotation.endPoint, strokeWidth: annotation.strokeWidth)
+            drawArrow(annotation: annotation, offset: offset)
+            // Arrow draws its own paths, so skip the common stroke below
+            if annotation.rotation != 0 {
+                context?.restoreGState()
+            }
+            return
         case .pen:
-            path.move(to: annotation.startPoint)
+            path.move(to: offsetStart)
             for point in annotation.points {
-                path.line(to: point)
+                path.line(to: CGPoint(x: point.x + offset.x, y: point.y + offset.y))
             }
             if annotation.points.isEmpty {
-                path.line(to: annotation.endPoint)
+                path.line(to: offsetEnd)
             }
         case .text:
-            drawText(annotation)
-            return
+            break // Handled above
         }
 
-        path.stroke()
+        if annotation.isFilled && (annotation.type == .rectangle || annotation.type == .oval) {
+            nsColor.setFill()
+            path.fill()
+        } else {
+            path.stroke()
+        }
+
+        if annotation.rotation != 0 {
+            context?.restoreGState()
+        }
     }
 
-    private func drawArrow(path: NSBezierPath, from start: CGPoint, to end: CGPoint, strokeWidth: CGFloat) {
-        path.move(to: start)
-        path.line(to: end)
+    private func drawArrow(annotation: Annotation, offset: CGPoint) {
+        let start = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
+        let end: CGPoint
+        let controlPoint: CGPoint
 
-        let angle = atan2(end.y - start.y, end.x - start.x)
-        let arrowLength = max(10, strokeWidth * 4)
+        if annotation.points.isEmpty {
+            end = CGPoint(x: annotation.endPoint.x + offset.x, y: annotation.endPoint.y + offset.y)
+            controlPoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+        } else {
+            let lastPt = annotation.points.last!
+            end = CGPoint(x: lastPt.x + offset.x, y: lastPt.y + offset.y)
+            let offsetPoints = annotation.points.map { CGPoint(x: $0.x + offset.x, y: $0.y + offset.y) }
+            controlPoint = calculateControlPoint(start: start, end: end, points: offsetPoints)
+        }
+
+        // Calculate arrowhead angle based on curve tangent at end
+        let angle = atan2(end.y - controlPoint.y, end.x - controlPoint.x)
+        let arrowLength = max(10, annotation.strokeWidth * 4)
         let arrowAngle: CGFloat = .pi / 6
 
         let arrowPoint1 = CGPoint(
@@ -89,19 +208,131 @@ final class ImageExporter {
             y: end.y - arrowLength * sin(angle + arrowAngle)
         )
 
-        path.move(to: end)
-        path.line(to: arrowPoint1)
-        path.move(to: end)
-        path.line(to: arrowPoint2)
+        // Shorten the line so it ends at the base of the arrowhead
+        let arrowBase = CGPoint(
+            x: (arrowPoint1.x + arrowPoint2.x) / 2,
+            y: (arrowPoint1.y + arrowPoint2.y) / 2
+        )
+
+        let nsColor = NSColor(annotation.strokeColor)
+        nsColor.setStroke()
+        nsColor.setFill()
+
+        // Draw the line (curve) ending at arrowhead base
+        let linePath = NSBezierPath()
+        linePath.lineWidth = annotation.strokeWidth
+        linePath.move(to: start)
+        linePath.curve(to: arrowBase, controlPoint1: controlPoint, controlPoint2: controlPoint)
+        linePath.stroke()
+
+        // Draw filled arrowhead triangle
+        let arrowheadPath = NSBezierPath()
+        arrowheadPath.move(to: end)
+        arrowheadPath.line(to: arrowPoint1)
+        arrowheadPath.line(to: arrowPoint2)
+        arrowheadPath.close()
+        arrowheadPath.fill()
     }
 
-    private func drawText(_ annotation: Annotation) {
+    private func calculateControlPoint(start: CGPoint, end: CGPoint, points: [CGPoint]) -> CGPoint {
+        let midPoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+
+        guard !points.isEmpty else {
+            return midPoint
+        }
+
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let lineLength = sqrt(dx * dx + dy * dy)
+
+        guard lineLength > 0 else {
+            return midPoint
+        }
+
+        // Calculate average signed perpendicular offset from the straight line
+        var totalOffset: CGFloat = 0
+        for point in points {
+            let signedDistance = ((point.y - start.y) * dx - (point.x - start.x) * dy) / lineLength
+            totalOffset += signedDistance
+        }
+        let avgOffset = totalOffset / CGFloat(points.count)
+
+        if abs(avgOffset) < 3 {
+            return midPoint
+        }
+
+        let perpX = -dy / lineLength
+        let perpY = dx / lineLength
+
+        return CGPoint(
+            x: midPoint.x + perpX * avgOffset * 1.5,
+            y: midPoint.y + perpY * avgOffset * 1.5
+        )
+    }
+
+    private func drawText(_ annotation: Annotation, offset: CGPoint = .zero) {
+        let context = NSGraphicsContext.current?.cgContext
+
         let nsColor = NSColor(annotation.strokeColor)
+        let font: NSFont
+        if annotation.fontName == "System" {
+            font = NSFont.systemFont(ofSize: annotation.fontSize, weight: .medium)
+        } else {
+            font = NSFont(name: annotation.fontName, size: annotation.fontSize) ?? NSFont.systemFont(ofSize: annotation.fontSize, weight: .medium)
+        }
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 16),
+            .font: font,
             .foregroundColor: nsColor
         ]
         let string = NSAttributedString(string: annotation.text, attributes: attributes)
-        string.draw(at: annotation.startPoint)
+        let textSize = string.size()
+
+        let basePoint = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
+
+        // Calculate draw point based on alignment
+        let drawPoint: CGPoint
+        switch annotation.textAlignment {
+        case .left:
+            drawPoint = basePoint
+        case .center:
+            drawPoint = CGPoint(x: basePoint.x - textSize.width / 2, y: basePoint.y)
+        case .right:
+            drawPoint = CGPoint(x: basePoint.x - textSize.width, y: basePoint.y)
+        }
+
+        // Calculate background rect using actual text size with individual edge padding
+        let paddingTop = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingTop : 0
+        let paddingRight = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingRight : 0
+        let paddingBottom = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingBottom : 0
+        let paddingLeft = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingLeft : 0
+        let bgRect = CGRect(
+            x: drawPoint.x - paddingLeft,
+            y: drawPoint.y - paddingBottom,
+            width: textSize.width + paddingLeft + paddingRight,
+            height: textSize.height + paddingTop + paddingBottom
+        )
+        let center = CGPoint(x: bgRect.midX, y: bgRect.midY)
+
+        // Apply rotation for text
+        if annotation.rotation != 0 {
+            context?.saveGState()
+            context?.translateBy(x: center.x, y: center.y)
+            context?.rotate(by: annotation.rotation)
+            context?.translateBy(x: -center.x, y: -center.y)
+        }
+
+        // Draw background if set
+        if let bgColor = annotation.textBackgroundColor {
+            let cornerRadius = annotation.textBackgroundCornerRadius
+            let bgPath = NSBezierPath(roundedRect: bgRect, xRadius: cornerRadius, yRadius: cornerRadius)
+            NSColor(bgColor).setFill()
+            bgPath.fill()
+        }
+
+        string.draw(at: drawPoint)
+
+        if annotation.rotation != 0 {
+            context?.restoreGState()
+        }
     }
 }
