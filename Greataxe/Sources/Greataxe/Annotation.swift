@@ -178,6 +178,60 @@ struct Annotation: Identifiable, Equatable {
     }
 }
 
+// MARK: - Type-Safe Extensions
+
+extension Annotation {
+    /// Returns true for basic geometric shapes (rectangle, oval, line).
+    var isShape: Bool {
+        switch type {
+        case .rectangle, .oval, .line:
+            return true
+        case .arrow, .pen, .text:
+            return false
+        }
+    }
+
+    /// Returns true for annotations with drawn paths (pen, arrow).
+    var isDrawnPath: Bool {
+        switch type {
+        case .pen, .arrow:
+            return true
+        case .rectangle, .oval, .line, .text:
+            return false
+        }
+    }
+
+    /// Returns true if this text annotation has a background color set.
+    var hasTextBackground: Bool {
+        textBackgroundColor != nil
+    }
+
+    /// Returns true for types that support fill (rectangle, oval).
+    var canBeFilled: Bool {
+        switch type {
+        case .rectangle, .oval:
+            return true
+        case .line, .arrow, .pen, .text:
+            return false
+        }
+    }
+
+    /// Returns true if this is a text annotation.
+    var isText: Bool {
+        type == .text
+    }
+
+    /// Returns true if this annotation uses the points array for its path.
+    var usesPoints: Bool {
+        switch type {
+        case .pen, .arrow:
+            return true
+        case .rectangle, .oval, .line, .text:
+            return false
+        }
+    }
+}
+
 enum DrawingTool: String, Equatable {
     case select
     case rectangle
