@@ -668,8 +668,25 @@ struct DrawingCanvasView: View {
                             }
                         }
 
-                        annotation.startPoint = newRect.origin
-                        annotation.endPoint = CGPoint(x: newRect.maxX, y: newRect.maxY)
+                        // For lines, preserve the original direction
+                        if annotation.type == .line {
+                            // Determine which corners the original start/end were at
+                            let startWasAtMinX = original.startPoint.x <= original.endPoint.x
+                            let startWasAtMinY = original.startPoint.y <= original.endPoint.y
+
+                            // Assign start/end to preserve the same relative positions
+                            annotation.startPoint = CGPoint(
+                                x: startWasAtMinX ? newRect.minX : newRect.maxX,
+                                y: startWasAtMinY ? newRect.minY : newRect.maxY
+                            )
+                            annotation.endPoint = CGPoint(
+                                x: startWasAtMinX ? newRect.maxX : newRect.minX,
+                                y: startWasAtMinY ? newRect.maxY : newRect.minY
+                            )
+                        } else {
+                            annotation.startPoint = newRect.origin
+                            annotation.endPoint = CGPoint(x: newRect.maxX, y: newRect.maxY)
+                        }
                         currentSize = CGSize(width: abs(newRect.width), height: abs(newRect.height))
                     }
                 }
