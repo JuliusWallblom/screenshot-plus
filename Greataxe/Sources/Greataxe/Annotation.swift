@@ -544,4 +544,84 @@ final class CanvasState: ObservableObject {
             annotations.contains { $0.id == id }
         }
     }
+
+    // MARK: - AppSettings Integration
+
+    /// Exports current canvas settings to an AppSettings instance.
+    func exportSettings() -> AppSettings {
+        var settings = AppSettings()
+
+        // Stroke settings
+        settings.strokeColor = strokeColor
+        settings.strokeWidth = strokeWidth
+        settings.fillShapes = fillShapes
+
+        // Tool settings
+        settings.currentTool = currentTool
+        settings.showPaddingPanel = showPaddingPanel
+
+        // Text settings
+        settings.textAlignment = textAlignment
+        settings.textFontSize = textFontSize
+        settings.textFontName = textFontName
+        settings.textBackgroundColor = textBackgroundColor
+        settings.textBackgroundPaddingTop = textBackgroundPaddingTop
+        settings.textBackgroundPaddingRight = textBackgroundPaddingRight
+        settings.textBackgroundPaddingBottom = textBackgroundPaddingBottom
+        settings.textBackgroundPaddingLeft = textBackgroundPaddingLeft
+        settings.textBackgroundCornerRadius = textBackgroundCornerRadius
+
+        // Padding options
+        settings.paddingEnabled = paddingOptions.enabled
+        settings.paddingAmount = paddingOptions.amount
+        settings.paddingCornerRadius = paddingOptions.cornerRadius
+        settings.gradientStartColor = paddingOptions.gradient.startColor
+        settings.gradientEndColor = paddingOptions.gradient.endColor
+        settings.gradientAngle = paddingOptions.gradient.angle
+        settings.shadowEnabled = paddingOptions.shadow.enabled
+        settings.shadowRadius = paddingOptions.shadow.radius
+        settings.shadowOpacity = paddingOptions.shadow.opacity
+        settings.shadowOffsetY = paddingOptions.shadow.offsetY
+
+        return settings
+    }
+
+    /// Imports settings from an AppSettings instance.
+    func importSettings(_ settings: AppSettings) {
+        isLoadingSettings = true
+
+        // Stroke settings
+        strokeColor = settings.strokeColor
+        strokeWidth = settings.strokeWidth
+        fillShapes = settings.fillShapes
+
+        // Tool settings
+        currentTool = settings.currentTool
+        showPaddingPanel = settings.showPaddingPanel
+
+        // Text settings
+        textAlignment = settings.textAlignment
+        textFontSize = settings.textFontSize
+        textFontName = settings.textFontName
+        textBackgroundColor = settings.textBackgroundColor
+        textBackgroundPaddingTop = settings.textBackgroundPaddingTop
+        textBackgroundPaddingRight = settings.textBackgroundPaddingRight
+        textBackgroundPaddingBottom = settings.textBackgroundPaddingBottom
+        textBackgroundPaddingLeft = settings.textBackgroundPaddingLeft
+        textBackgroundCornerRadius = settings.textBackgroundCornerRadius
+
+        // Padding options
+        paddingOptions.enabled = settings.paddingEnabled
+        paddingOptions.amount = settings.paddingAmount
+        paddingOptions.cornerRadius = settings.paddingCornerRadius
+        paddingOptions.gradient.startColor = settings.gradientStartColor
+        paddingOptions.gradient.endColor = settings.gradientEndColor
+        paddingOptions.gradient.angle = settings.gradientAngle
+        paddingOptions.shadow.enabled = settings.shadowEnabled
+        paddingOptions.shadow.radius = settings.shadowRadius
+        paddingOptions.shadow.opacity = settings.shadowOpacity
+        paddingOptions.shadow.offsetY = settings.shadowOffsetY
+
+        isLoadingSettings = false
+    }
 }

@@ -11,3 +11,4 @@
 [2025-12-13 23:42:02] Created AppSettings model for centralized settings persistence
 [2025-12-13 23:44:57] Created TextEditingController for text annotation lifecycle
 [2025-12-13 23:46:34] Added type-safe extensions to Annotation model
+[2025-12-13 23:48:38] Added AppSettings integration to CanvasState (export/import)
