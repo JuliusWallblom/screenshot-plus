@@ -43,6 +43,8 @@ struct AnnotationView: View {
         panel.nameFieldStringValue = state.imageURL.deletingPathExtension().lastPathComponent + "_annotated.png"
 
         if panel.runModal() == .OK, let url = panel.url {
+            // Mark file as saved by app to prevent screenshot monitor from reopening it
+            (NSApp.delegate as? AppDelegate)?.ignoreSavedFile(url)
             _ = exporter.saveToFile(rendered, at: url)
         }
     }

@@ -6,10 +6,20 @@ final class ScreenshotMonitor {
     private var fileDescriptor: Int32 = -1
     private var knownFiles: Set<String> = []
 
+    /// Files saved by the app that should be ignored when detected
+    private var ignoredFiles: Set<String> = []
+
     var onScreenshotDetected: ((URL) -> Void)?
 
     init(watchDirectory: URL) {
         self.watchDirectory = watchDirectory
+    }
+
+    /// Mark a file as saved by the app so it won't trigger screenshot detection
+    func ignoreFile(_ url: URL) {
+        ignoredFiles.insert(url.lastPathComponent)
+        // Also add to known files immediately to prevent race conditions
+        knownFiles.insert(url.lastPathComponent)
     }
 
     func startMonitoring() {
@@ -53,6 +63,11 @@ final class ScreenshotMonitor {
 
         let newFiles = Set(currentFiles).subtracting(knownFiles)
         for filename in newFiles {
+            // Skip files that were saved by the app
+            if ignoredFiles.contains(filename) {
+                ignoredFiles.remove(filename)
+                continue
+            }
             if isScreenshotFile(filename) {
                 let fileURL = watchDirectory.appendingPathComponent(filename)
                 onScreenshotDetected?(fileURL)
