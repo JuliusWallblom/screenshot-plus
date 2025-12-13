@@ -6,8 +6,9 @@ final class ScreenshotMonitor {
     private var fileDescriptor: Int32 = -1
     private var knownFiles: Set<String> = []
 
-    /// Files saved by the app that should be ignored when detected
-    private var ignoredFiles: Set<String> = []
+    /// Files saved by the app with timestamp - ignored for a duration to handle multiple file system events
+    private var ignoredFiles: [String: Date] = [:]
+    private let ignoreDuration: TimeInterval = 5.0
 
     var onScreenshotDetected: ((URL) -> Void)?
 
@@ -17,9 +18,21 @@ final class ScreenshotMonitor {
 
     /// Mark a file as saved by the app so it won't trigger screenshot detection
     func ignoreFile(_ url: URL) {
-        ignoredFiles.insert(url.lastPathComponent)
-        // Also add to known files immediately to prevent race conditions
-        knownFiles.insert(url.lastPathComponent)
+        // Only ignore if saving to the watched directory
+        if url.deletingLastPathComponent().standardizedFileURL == watchDirectory.standardizedFileURL {
+            ignoredFiles[url.lastPathComponent] = Date()
+            knownFiles.insert(url.lastPathComponent)
+        }
+    }
+
+    private func isIgnored(_ filename: String) -> Bool {
+        guard let ignoredAt = ignoredFiles[filename] else { return false }
+        if Date().timeIntervalSince(ignoredAt) < ignoreDuration {
+            return true
+        }
+        // Expired - remove from ignore list
+        ignoredFiles.removeValue(forKey: filename)
+        return false
     }
 
     func startMonitoring() {
@@ -63,9 +76,8 @@ final class ScreenshotMonitor {
 
         let newFiles = Set(currentFiles).subtracting(knownFiles)
         for filename in newFiles {
-            // Skip files that were saved by the app
-            if ignoredFiles.contains(filename) {
-                ignoredFiles.remove(filename)
+            // Skip files that were saved by the app (time-based check handles multiple events)
+            if isIgnored(filename) {
                 continue
             }
             if isScreenshotFile(filename) {
