@@ -35,6 +35,24 @@
             "name": "Release Preview+",
             "program": "${workspaceFolder:Greataxe}/.build/release/Preview+",
             "preLaunchTask": "swift: Build Release Preview+"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Greataxe}",
+            "name": "Debug Screenshot+",
+            "program": "${workspaceFolder:Greataxe}/.build/debug/Screenshot+",
+            "preLaunchTask": "swift: Build Debug Screenshot+"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Greataxe}",
+            "name": "Release Screenshot+",
+            "program": "${workspaceFolder:Greataxe}/.build/release/Screenshot+",
+            "preLaunchTask": "swift: Build Release Screenshot+"
         }
     ]
 }

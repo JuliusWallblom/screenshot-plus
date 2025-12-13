@@ -1,6 +1,6 @@
 import Testing
 import AppKit
-@testable import Preview_
+@testable import Screenshot_
 
 @Suite("WindowFactory Tests")
 struct WindowFactoryTests {

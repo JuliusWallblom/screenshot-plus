@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import Preview_
+@testable import Screenshot_
 
 @Suite("Screenshot Monitor Tests")
 struct ScreenshotMonitorTests {

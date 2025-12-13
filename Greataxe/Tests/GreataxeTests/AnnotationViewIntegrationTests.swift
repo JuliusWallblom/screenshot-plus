@@ -1,6 +1,6 @@
 import Testing
 import SwiftUI
-@testable import Preview_
+@testable import Screenshot_
 
 @Suite("Annotation View Integration Tests")
 struct AnnotationViewIntegrationTests {

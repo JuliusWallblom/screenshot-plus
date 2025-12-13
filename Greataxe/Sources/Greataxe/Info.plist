@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>Preview+</string>
+    <string>Screenshot+</string>
     <key>CFBundleDisplayName</key>
-    <string>Preview+</string>
+    <string>Screenshot+</string>
     <key>CFBundleIdentifier</key>
-    <string>com.previewplus.app</string>
+    <string>com.screenshotplus.app</string>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>CFBundleShortVersionString</key>
@@ -15,7 +15,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
-    <string>Preview+</string>
+    <string>Screenshot+</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
@@ -23,6 +23,6 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2024 Preview+. All rights reserved.</string>
+    <string>Copyright © 2024 Screenshot+. All rights reserved.</string>
 </dict>
 </plist>

@@ -1,10 +1,10 @@
 import Testing
-@testable import Preview_
+@testable import Screenshot_
 
 @Suite("App Structure Tests")
 struct AppTests {
-    @Test("App name is Preview+")
-    func appNameIsPreviewPlus() {
-        #expect(AppConfig.appName == "Preview+")
+    @Test("App name is Screenshot+")
+    func appNameIsScreenshotPlus() {
+        #expect(AppConfig.appName == "Screenshot+")
     }
 }
