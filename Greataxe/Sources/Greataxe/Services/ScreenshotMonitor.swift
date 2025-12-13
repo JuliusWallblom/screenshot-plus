@@ -18,11 +18,10 @@ final class ScreenshotMonitor {
 
     /// Mark a file as saved by the app so it won't trigger screenshot detection
     func ignoreFile(_ url: URL) {
-        // Only ignore if saving to the watched directory
-        if url.deletingLastPathComponent().standardizedFileURL == watchDirectory.standardizedFileURL {
-            ignoredFiles[url.lastPathComponent] = Date()
-            knownFiles.insert(url.lastPathComponent)
-        }
+        // Always add to ignore list - the filename is what matters since we only monitor one directory
+        let filename = url.lastPathComponent
+        ignoredFiles[filename] = Date()
+        knownFiles.insert(filename)
     }
 
     private func isIgnored(_ filename: String) -> Bool {
