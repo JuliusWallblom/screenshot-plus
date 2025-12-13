@@ -113,6 +113,42 @@ final class ImageExporter {
         }
     }
 
+    /// Saves image to file, returning Result with URL on success or ExportError on failure.
+    func saveToFileResult(_ image: NSImage, at url: URL) -> Result<URL, ExportError> {
+        guard let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let pngData = bitmap.representation(using: .png, properties: [:]) else {
+            return .failure(.imageConversionFailed)
+        }
+
+        do {
+            try pngData.write(to: url)
+            return .success(url)
+        } catch {
+            return .failure(.writeFailed(error))
+        }
+    }
+
+    /// Copies image to clipboard, returning Result.
+    func copyToClipboardResult(_ image: NSImage) -> Result<Void, ExportError> {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        if pasteboard.writeObjects([image]) {
+            return .success(())
+        } else {
+            return .failure(.clipboardFailed)
+        }
+    }
+
+    /// Renders image with annotations, returning Result.
+    func renderImageResult(_ baseImage: NSImage, with annotations: [Annotation], paddingOptions: PaddingOptions = PaddingOptions()) -> Result<NSImage, ExportError> {
+        if let image = renderImage(baseImage, with: annotations, paddingOptions: paddingOptions) {
+            return .success(image)
+        } else {
+            return .failure(.renderFailed)
+        }
+    }
+
     private func drawAnnotation(_ annotation: Annotation, offset: CGPoint = .zero) {
         // Text handles its own rotation
         if annotation.type == .text {

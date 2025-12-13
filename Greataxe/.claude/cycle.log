@@ -13,3 +13,4 @@
 [2025-12-13 23:46:34] Added type-safe extensions to Annotation model
 [2025-12-13 23:48:38] Added AppSettings integration to CanvasState (export/import)
 [2025-12-13 23:50:07] Created AnnotationCommand protocol and command implementations
+[2025-12-13 23:52:18] Added Result-based error handling for file operations
