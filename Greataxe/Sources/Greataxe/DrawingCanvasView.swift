@@ -10,9 +10,7 @@ enum CanvasDragMode: Equatable {
     case marquee
 }
 
-enum HandlePosition: Equatable {
-    case topLeft, topRight, bottomLeft, bottomRight
-}
+// HandlePosition is defined in HitTestService.swift
 
 struct DrawingCanvasView: View {
     @ObservedObject var canvasState: CanvasState
