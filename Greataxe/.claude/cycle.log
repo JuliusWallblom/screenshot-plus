@@ -8,3 +8,4 @@
 [2025-12-13 23:05:37] Fixed WindowFactory to return WindowFactoryResult with toolbarController for retention
 [2025-12-13 23:09:38] Created GestureHandler for drag mode determination
 [2025-12-13 23:40:04] Created ResizeRotateHandler for resize and rotation calculations
+[2025-12-13 23:42:02] Created AppSettings model for centralized settings persistence
