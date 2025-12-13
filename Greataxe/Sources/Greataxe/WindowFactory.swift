@@ -1,11 +1,16 @@
 import AppKit
 import SwiftUI
 
+struct WindowFactoryResult {
+    let window: NSWindow
+    let toolbarController: ToolbarController
+}
+
 struct WindowFactory {
     let defaultSize = NSSize(width: 800, height: 600)
 
     @MainActor
-    func createAnnotationWindow(windowState: AnnotationWindowState, canvasState: CanvasState) -> NSWindow {
+    func createAnnotationWindow(windowState: AnnotationWindowState, canvasState: CanvasState) -> WindowFactoryResult {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -29,6 +34,6 @@ struct WindowFactory {
         window.title = windowState.imageURL.lastPathComponent
         window.center()
 
-        return window
+        return WindowFactoryResult(window: window, toolbarController: toolbarController)
     }
 }
