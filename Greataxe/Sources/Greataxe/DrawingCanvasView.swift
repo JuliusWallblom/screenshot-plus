@@ -1180,14 +1180,10 @@ struct TextAnnotationView: View {
         }
     }
 
+    private static let textMeasurementService = TextMeasurementService()
+
     private func calculateTextSize() -> CGSize {
-        let displayText = annotation.text.isEmpty ? "|" : annotation.text
-        let attributes: [NSAttributedString.Key: Any] = [.font: nsFont]
-        let lines = displayText.components(separatedBy: "\n")
-        let lineHeight = nsFont.ascender - nsFont.descender + nsFont.leading
-        let height = lineHeight * CGFloat(max(lines.count, 1))
-        let maxWidth = lines.map { ($0 as NSString).size(withAttributes: attributes).width }.max() ?? 10
-        return CGSize(width: max(maxWidth, 10), height: height)
+        Self.textMeasurementService.measureText(annotation.text, font: nsFont)
     }
 
     @State private var measuredSize: CGSize = CGSize(width: 10, height: 20)
@@ -1385,14 +1381,11 @@ class AnnotationTextView: NSTextView {
         super.keyDown(with: event)
     }
 
+    private static let textMeasurementService = TextMeasurementService()
+
     override var intrinsicContentSize: NSSize {
         guard let font = self.font else { return super.intrinsicContentSize }
-        let displayText = string.isEmpty ? "|" : string
-        let attributes: [NSAttributedString.Key: Any] = [.font: font]
-        let lines = displayText.components(separatedBy: "\n")
-        let lineHeight = font.ascender - font.descender + font.leading
-        let height = lineHeight * CGFloat(max(lines.count, 1))
-        let maxWidth = lines.map { ($0 as NSString).size(withAttributes: attributes).width }.max() ?? 10
-        return NSSize(width: max(maxWidth, 10), height: height)
+        let size = Self.textMeasurementService.measureText(string, font: font)
+        return NSSize(width: size.width, height: size.height)
     }
 }
