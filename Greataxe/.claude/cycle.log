@@ -1,2 +1,3 @@
 [2025-12-13 20:48:45] Extracted CoordinateSpace utility for screen/image coordinate transformations
 [2025-12-13 20:51:14] Extracted TextMeasurementService for consolidated text sizing logic
+[2025-12-13 20:54:00] Extracted ToolbarController and SettingsPopoverContent to separate files
