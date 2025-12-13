@@ -6,3 +6,4 @@
 [2025-12-13 20:58:45] Created AnnotationRenderer for reusable arrow rendering calculations
 [2025-12-13 21:00:05] Extracted WindowFactory for annotation window creation
 [2025-12-13 23:05:37] Fixed WindowFactory to return WindowFactoryResult with toolbarController for retention
+[2025-12-13 23:09:38] Created GestureHandler for drag mode determination
