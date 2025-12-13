@@ -3,3 +3,4 @@
 [2025-12-13 20:54:00] Extracted ToolbarController and SettingsPopoverContent to separate files
 [2025-12-13 20:55:53] Extracted HitTestService for annotation and handle hit testing
 [2025-12-13 20:57:16] Extracted AnnotationSelectionManager for selection state management
+[2025-12-13 20:58:45] Created AnnotationRenderer for reusable arrow rendering calculations
