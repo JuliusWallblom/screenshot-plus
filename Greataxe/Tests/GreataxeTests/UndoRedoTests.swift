@@ -1,6 +1,6 @@
 import Testing
 import SwiftUI
-@testable import Greataxe
+@testable import Preview_
 
 @Suite("Undo/Redo Tests")
 struct UndoRedoTests {

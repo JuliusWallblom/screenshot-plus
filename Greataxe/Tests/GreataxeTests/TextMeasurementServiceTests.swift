@@ -1,6 +1,6 @@
 import Testing
 import AppKit
-@testable import Greataxe
+@testable import Preview_
 
 @Suite("TextMeasurementService Tests")
 struct TextMeasurementServiceTests {

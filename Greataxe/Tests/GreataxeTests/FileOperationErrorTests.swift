@@ -1,6 +1,6 @@
 import Testing
 import AppKit
-@testable import Greataxe
+@testable import Preview_
 
 @Suite("FileOperationError Tests")
 struct FileOperationErrorTests {

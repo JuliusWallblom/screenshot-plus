@@ -1,10 +1,10 @@
 import Testing
-@testable import Greataxe
+@testable import Preview_
 
 @Suite("App Structure Tests")
 struct AppTests {
-    @Test("App name is Greataxe")
-    func appNameIsGreataxe() {
-        #expect(AppConfig.appName == "Greataxe")
+    @Test("App name is Preview+")
+    func appNameIsPreviewPlus() {
+        #expect(AppConfig.appName == "Preview+")
     }
 }

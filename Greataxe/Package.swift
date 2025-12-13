@@ -2,21 +2,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "Greataxe",
+    name: "Preview+",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "Greataxe", targets: ["Greataxe"])
+        .executable(name: "Preview+", targets: ["Preview+"])
     ],
     targets: [
         .executableTarget(
-            name: "Greataxe",
-            path: "Sources/Greataxe"
+            name: "Preview+",
+            path: "Sources/Greataxe",
+            exclude: ["Info.plist"]
         ),
         .testTarget(
             name: "GreataxeTests",
-            dependencies: ["Greataxe"],
+            dependencies: ["Preview+"],
             path: "Tests/GreataxeTests"
         )
     ]
