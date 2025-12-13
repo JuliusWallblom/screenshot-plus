@@ -362,7 +362,7 @@ private struct SettingsPopoverContent: View {
     }
 }
 
-private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
+private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolbarItemValidation {
     let canvasState: CanvasState
     let windowState: AnnotationWindowState
     private let exporter = ImageExporter()
@@ -370,6 +370,9 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
     private var paddingItem: NSToolbarItem?
     private var settingsButton: NSButton?
     private var settingsPopover: NSPopover?
+    private var undoItem: NSToolbarItem?
+    private var redoItem: NSToolbarItem?
+    private weak var toolbar: NSToolbar?
 
     private let itemIdentifiers: [NSToolbarItem.Identifier] = [
         .init("padding"),
@@ -389,6 +392,10 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         self.windowState = windowState
     }
 
+    func setToolbar(_ toolbar: NSToolbar) {
+        self.toolbar = toolbar
+    }
+
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         itemIdentifiers
     }
@@ -403,16 +410,22 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             item.image = NSImage(systemSymbolName: "arrow.uturn.backward", accessibilityDescription: "Undo")
             item.label = "Undo"
+            item.toolTip = "Undo (⌘Z)"
             item.target = self
             item.action = #selector(undoAction)
+            item.autovalidates = true
+            undoItem = item
             return item
 
         case "redo":
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             item.image = NSImage(systemSymbolName: "arrow.uturn.forward", accessibilityDescription: "Redo")
             item.label = "Redo"
+            item.toolTip = "Redo (⇧⌘Z)"
             item.target = self
             item.action = #selector(redoAction)
+            item.autovalidates = true
+            redoItem = item
             return item
 
         case "settings":
@@ -420,25 +433,32 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             let button = NSButton(frame: NSRect(x: 0, y: 0, width: 30, height: 24))
             button.bezelStyle = .texturedRounded
             button.image = NSImage(systemSymbolName: "slider.horizontal.3", accessibilityDescription: "Settings")
+            button.toolTip = "Annotation Settings"
             button.target = self
             button.action = #selector(showSettingsPopover(_:))
             item.view = button
             item.label = "Settings"
+            item.toolTip = "Annotation Settings"
             settingsButton = button
             return item
 
         case "toolsGroup":
-            let tools: [(String, String)] = [
-                ("rectangle.and.hand.point.up.left.filled", "Select"),
-                ("rectangle", "Rectangle"),
-                ("oval", "Oval"),
-                ("line.diagonal", "Line"),
-                ("arrow.up.right", "Arrow"),
-                ("pencil", "Pen"),
-                ("textformat", "Text")
+            let tools: [(String, String, String)] = [
+                ("rectangle.dashed", "Select", "Select & Move (V)"),
+                ("rectangle", "Rectangle", "Rectangle Tool (R)"),
+                ("oval", "Oval", "Oval Tool (O)"),
+                ("line.diagonal", "Line", "Line Tool (L)"),
+                ("arrow.up.right", "Arrow", "Arrow Tool (A)"),
+                ("pencil", "Pen", "Pen Tool (P)"),
+                ("textformat", "Text", "Text Tool (T)")
             ]
 
             let group = NSToolbarItemGroup(itemIdentifier: itemIdentifier, images: tools.map { NSImage(systemSymbolName: $0.0, accessibilityDescription: $0.1)! }, selectionMode: .selectOne, labels: tools.map { $0.1 }, target: self, action: #selector(toolGroupChanged(_:)))
+
+            // Set tooltips for each tool in the group
+            for (index, tool) in tools.enumerated() {
+                group.subitems[index].toolTip = tool.2
+            }
 
             // Set selected index based on persisted tool
             let toolOrder: [DrawingTool] = [.select, .rectangle, .oval, .line, .arrow, .pen, .text]
@@ -451,6 +471,7 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
         case "padding":
             let group = NSToolbarItemGroup(itemIdentifier: itemIdentifier, images: [NSImage(systemSymbolName: "sidebar.squares.left", accessibilityDescription: "Padding")!], selectionMode: .selectAny, labels: ["Padding"], target: self, action: #selector(togglePaddingPanel(_:)))
             group.label = "Padding"
+            group.subitems[0].toolTip = "Toggle Padding Panel"
             if canvasState.showPaddingPanel {
                 group.setSelected(true, at: 0)
             }
@@ -461,6 +482,7 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             item.image = NSImage(systemSymbolName: "clipboard", accessibilityDescription: "Copy")
             item.label = "Copy"
+            item.toolTip = "Copy to Clipboard (⌘C)"
             item.target = self
             item.action = #selector(copyImage)
             return item
@@ -469,6 +491,7 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
             item.image = NSImage(systemSymbolName: "square.and.arrow.down", accessibilityDescription: "Save")
             item.label = "Save"
+            item.toolTip = "Save Image (⌘S)"
             item.target = self
             item.action = #selector(saveImage)
             return item
@@ -510,10 +533,23 @@ private class ToolbarDelegate: NSObject, NSToolbarDelegate, NSPopoverDelegate {
 
     @objc private func undoAction() {
         canvasState.undo()
+        toolbar?.validateVisibleItems()
     }
 
     @objc private func redoAction() {
         canvasState.redo()
+        toolbar?.validateVisibleItems()
+    }
+
+    func validateToolbarItem(_ item: NSToolbarItem) -> Bool {
+        switch item.itemIdentifier.rawValue {
+        case "undo":
+            return canvasState.canUndo
+        case "redo":
+            return canvasState.canRedo
+        default:
+            return true
+        }
     }
 
     @objc private func copyImage() {
@@ -654,6 +690,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let toolbarDelegate = ToolbarDelegate(canvasState: canvasState, windowState: windowState)
         context.toolbarDelegate = toolbarDelegate
         toolbar.delegate = toolbarDelegate
+        toolbarDelegate.setToolbar(toolbar)
         toolbar.displayMode = .iconOnly
         window.toolbar = toolbar
         window.toolbarStyle = .unified

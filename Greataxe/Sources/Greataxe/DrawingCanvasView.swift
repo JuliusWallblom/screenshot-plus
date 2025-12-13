@@ -185,6 +185,7 @@ struct DrawingCanvasView: View {
                                 canvasState.saveState()
                                 canvasState.annotations.append(annotation)
                                 canvasState.selectedAnnotationIds = [annotation.id]
+                                NSApp.keyWindow?.toolbar?.validateVisibleItems()
                             }
                             isCreatingNewText = false
                             newTextAnnotation = nil
@@ -225,6 +226,7 @@ struct DrawingCanvasView: View {
                     } else {
                         canvasState.undo()
                     }
+                    NSApp.keyWindow?.toolbar?.validateVisibleItems()
                     return nil
                 }
                 return event
@@ -260,6 +262,7 @@ struct DrawingCanvasView: View {
                     canvasState.saveState()
                     canvasState.annotations.append(annotation)
                     canvasState.selectedAnnotationIds = [annotation.id]
+                    NSApp.keyWindow?.toolbar?.validateVisibleItems()
                 }
                 isCreatingNewText = false
                 newTextAnnotation = nil
@@ -432,53 +435,72 @@ struct DrawingCanvasView: View {
                         canvasState.textBackgroundPaddingLeft = newPaddingLeft
                     } else if annotation.type == .pen {
                         // For pen annotations, scale all points proportionally
-                        let rect = original.boundingRect
+                        // Calculate actual bounds from points, without stroke padding
+                        let allPoints = [original.startPoint] + original.points
+                        let minX = allPoints.map { $0.x }.min() ?? original.startPoint.x
+                        let minY = allPoints.map { $0.y }.min() ?? original.startPoint.y
+                        let maxX = allPoints.map { $0.x }.max() ?? original.startPoint.x
+                        let maxY = allPoints.map { $0.y }.max() ?? original.startPoint.y
+                        let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+
+                        // Calculate stroke padding offset (handles are on padded boundingRect)
+                        let strokePadding = original.strokeWidth
+                        // Adjust imageLocation to account for the padding offset
+                        let adjustedLocation = CGPoint(
+                            x: imageLocation.x + (handle == .topLeft || handle == .bottomLeft ? strokePadding : -strokePadding),
+                            y: imageLocation.y + (handle == .topLeft || handle == .topRight ? strokePadding : -strokePadding)
+                        )
+
                         var newRect = rect
                         let shiftHeld = NSEvent.modifierFlags.contains(.shift)
 
                         switch handle {
                         case .topLeft:
-                            newRect.origin = imageLocation
-                            newRect.size.width = rect.maxX - imageLocation.x
-                            newRect.size.height = rect.maxY - imageLocation.y
+                            newRect.origin = adjustedLocation
+                            newRect.size.width = rect.maxX - adjustedLocation.x
+                            newRect.size.height = rect.maxY - adjustedLocation.y
                         case .topRight:
-                            newRect.origin.y = imageLocation.y
-                            newRect.size.width = imageLocation.x - rect.minX
-                            newRect.size.height = rect.maxY - imageLocation.y
+                            newRect.origin.y = adjustedLocation.y
+                            newRect.size.width = adjustedLocation.x - rect.minX
+                            newRect.size.height = rect.maxY - adjustedLocation.y
                         case .bottomLeft:
-                            newRect.origin.x = imageLocation.x
-                            newRect.size.width = rect.maxX - imageLocation.x
-                            newRect.size.height = imageLocation.y - rect.minY
+                            newRect.origin.x = adjustedLocation.x
+                            newRect.size.width = rect.maxX - adjustedLocation.x
+                            newRect.size.height = adjustedLocation.y - rect.minY
                         case .bottomRight:
-                            newRect.size.width = imageLocation.x - rect.minX
-                            newRect.size.height = imageLocation.y - rect.minY
+                            newRect.size.width = adjustedLocation.x - rect.minX
+                            newRect.size.height = adjustedLocation.y - rect.minY
                         }
 
                         // Constrain aspect ratio when shift is held
                         if shiftHeld && rect.width > 0 && rect.height > 0 {
-                            let originalAspect = rect.width / rect.height
-                            let newAspect = abs(newRect.width) / abs(newRect.height)
+                            var originalAspect = rect.width / rect.height
+                            // Snap to 1:1 if very close (handles floating point imprecision from shift-created squares)
+                            if abs(originalAspect - 1.0) < 0.02 {
+                                originalAspect = 1.0
+                            }
 
-                            if newAspect > originalAspect {
-                                // Width is too large, adjust it
-                                let adjustedWidth = abs(newRect.height) * originalAspect * (newRect.width < 0 ? -1 : 1)
-                                switch handle {
-                                case .topLeft, .bottomLeft:
-                                    newRect.origin.x = rect.maxX - adjustedWidth
-                                    newRect.size.width = adjustedWidth
-                                case .topRight, .bottomRight:
-                                    newRect.size.width = adjustedWidth
-                                }
-                            } else {
-                                // Height is too large, adjust it
-                                let adjustedHeight = abs(newRect.width) / originalAspect * (newRect.height < 0 ? -1 : 1)
-                                switch handle {
-                                case .topLeft, .topRight:
-                                    newRect.origin.y = rect.maxY - adjustedHeight
-                                    newRect.size.height = adjustedHeight
-                                case .bottomLeft, .bottomRight:
-                                    newRect.size.height = adjustedHeight
-                                }
+                            let size = max(abs(newRect.width), abs(newRect.height))
+                            let adjustedWidth = size * (newRect.width < 0 ? -1 : 1)
+                            let adjustedHeight = size / originalAspect * (newRect.height < 0 ? -1 : 1)
+
+                            switch handle {
+                            case .topLeft:
+                                newRect.origin.x = rect.maxX - adjustedWidth
+                                newRect.origin.y = rect.maxY - adjustedHeight
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .topRight:
+                                newRect.origin.y = rect.maxY - adjustedHeight
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .bottomLeft:
+                                newRect.origin.x = rect.maxX - adjustedWidth
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .bottomRight:
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
                             }
                         }
 
@@ -501,55 +523,160 @@ struct DrawingCanvasView: View {
                         }
 
                         currentSize = CGSize(width: abs(newRect.width), height: abs(newRect.height))
-                    } else if annotation.type != .text {
-                        // For rectangle, oval, line, arrow
-                        let rect = original.boundingRect
+                    } else if annotation.type == .arrow && !original.points.isEmpty {
+                        // For arrows, scale start point and all points in the path
+                        let end = original.points.last!
+                        let relevantPoints = [original.startPoint, end]
+                        let minX = relevantPoints.map { $0.x }.min()!
+                        let minY = relevantPoints.map { $0.y }.min()!
+                        let maxX = relevantPoints.map { $0.x }.max()!
+                        let maxY = relevantPoints.map { $0.y }.max()!
+                        let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+
+                        // Calculate padding offset (handles are on padded boundingRect)
+                        let strokePadding = max(original.strokeWidth / 2, original.strokeWidth * 4)
+                        let adjustedLocation = CGPoint(
+                            x: imageLocation.x + (handle == .topLeft || handle == .bottomLeft ? strokePadding : -strokePadding),
+                            y: imageLocation.y + (handle == .topLeft || handle == .topRight ? strokePadding : -strokePadding)
+                        )
+
                         var newRect = rect
                         let shiftHeld = NSEvent.modifierFlags.contains(.shift)
 
                         switch handle {
                         case .topLeft:
-                            newRect.origin = imageLocation
-                            newRect.size.width = rect.maxX - imageLocation.x
-                            newRect.size.height = rect.maxY - imageLocation.y
+                            newRect.origin = adjustedLocation
+                            newRect.size.width = rect.maxX - adjustedLocation.x
+                            newRect.size.height = rect.maxY - adjustedLocation.y
                         case .topRight:
-                            newRect.origin.y = imageLocation.y
-                            newRect.size.width = imageLocation.x - rect.minX
-                            newRect.size.height = rect.maxY - imageLocation.y
+                            newRect.origin.y = adjustedLocation.y
+                            newRect.size.width = adjustedLocation.x - rect.minX
+                            newRect.size.height = rect.maxY - adjustedLocation.y
                         case .bottomLeft:
-                            newRect.origin.x = imageLocation.x
-                            newRect.size.width = rect.maxX - imageLocation.x
-                            newRect.size.height = imageLocation.y - rect.minY
+                            newRect.origin.x = adjustedLocation.x
+                            newRect.size.width = rect.maxX - adjustedLocation.x
+                            newRect.size.height = adjustedLocation.y - rect.minY
                         case .bottomRight:
-                            newRect.size.width = imageLocation.x - rect.minX
-                            newRect.size.height = imageLocation.y - rect.minY
+                            newRect.size.width = adjustedLocation.x - rect.minX
+                            newRect.size.height = adjustedLocation.y - rect.minY
                         }
 
                         // Constrain aspect ratio when shift is held
                         if shiftHeld && rect.width > 0 && rect.height > 0 {
-                            let originalAspect = rect.width / rect.height
-                            let newAspect = abs(newRect.width) / abs(newRect.height)
+                            var originalAspect = rect.width / rect.height
+                            if abs(originalAspect - 1.0) < 0.02 {
+                                originalAspect = 1.0
+                            }
 
-                            if newAspect > originalAspect {
-                                // Width is too large, adjust it
-                                let adjustedWidth = abs(newRect.height) * originalAspect * (newRect.width < 0 ? -1 : 1)
-                                switch handle {
-                                case .topLeft, .bottomLeft:
-                                    newRect.origin.x = rect.maxX - adjustedWidth
-                                    newRect.size.width = adjustedWidth
-                                case .topRight, .bottomRight:
-                                    newRect.size.width = adjustedWidth
-                                }
-                            } else {
-                                // Height is too large, adjust it
-                                let adjustedHeight = abs(newRect.width) / originalAspect * (newRect.height < 0 ? -1 : 1)
-                                switch handle {
-                                case .topLeft, .topRight:
-                                    newRect.origin.y = rect.maxY - adjustedHeight
-                                    newRect.size.height = adjustedHeight
-                                case .bottomLeft, .bottomRight:
-                                    newRect.size.height = adjustedHeight
-                                }
+                            let size = max(abs(newRect.width), abs(newRect.height))
+                            let adjustedWidth = size * (newRect.width < 0 ? -1 : 1)
+                            let adjustedHeight = size / originalAspect * (newRect.height < 0 ? -1 : 1)
+
+                            switch handle {
+                            case .topLeft:
+                                newRect.origin.x = rect.maxX - adjustedWidth
+                                newRect.origin.y = rect.maxY - adjustedHeight
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .topRight:
+                                newRect.origin.y = rect.maxY - adjustedHeight
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .bottomLeft:
+                                newRect.origin.x = rect.maxX - adjustedWidth
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .bottomRight:
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            }
+                        }
+
+                        // Calculate scale factors
+                        let scaleX = rect.width > 0 ? newRect.width / rect.width : 1
+                        let scaleY = rect.height > 0 ? newRect.height / rect.height : 1
+
+                        // Scale startPoint
+                        annotation.startPoint = CGPoint(
+                            x: newRect.minX + (original.startPoint.x - rect.minX) * scaleX,
+                            y: newRect.minY + (original.startPoint.y - rect.minY) * scaleY
+                        )
+
+                        // Scale all points in the path
+                        annotation.points = original.points.map { point in
+                            CGPoint(
+                                x: newRect.minX + (point.x - rect.minX) * scaleX,
+                                y: newRect.minY + (point.y - rect.minY) * scaleY
+                            )
+                        }
+
+                        currentSize = CGSize(width: abs(newRect.width), height: abs(newRect.height))
+                    } else if annotation.type != .text {
+                        // For rectangle, oval, line, arrow - use actual shape bounds, not padded boundingRect
+                        let minX = min(original.startPoint.x, original.endPoint.x)
+                        let minY = min(original.startPoint.y, original.endPoint.y)
+                        let maxX = max(original.startPoint.x, original.endPoint.x)
+                        let maxY = max(original.startPoint.y, original.endPoint.y)
+                        let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+
+                        // Calculate stroke padding offset (handles are on padded boundingRect)
+                        let strokePadding = original.isFilled ? 0 : original.strokeWidth
+                        // Adjust imageLocation to account for the padding offset
+                        let adjustedLocation = CGPoint(
+                            x: imageLocation.x + (handle == .topLeft || handle == .bottomLeft ? strokePadding : -strokePadding),
+                            y: imageLocation.y + (handle == .topLeft || handle == .topRight ? strokePadding : -strokePadding)
+                        )
+
+                        var newRect = rect
+                        let shiftHeld = NSEvent.modifierFlags.contains(.shift)
+
+                        switch handle {
+                        case .topLeft:
+                            newRect.origin = adjustedLocation
+                            newRect.size.width = rect.maxX - adjustedLocation.x
+                            newRect.size.height = rect.maxY - adjustedLocation.y
+                        case .topRight:
+                            newRect.origin.y = adjustedLocation.y
+                            newRect.size.width = adjustedLocation.x - rect.minX
+                            newRect.size.height = rect.maxY - adjustedLocation.y
+                        case .bottomLeft:
+                            newRect.origin.x = adjustedLocation.x
+                            newRect.size.width = rect.maxX - adjustedLocation.x
+                            newRect.size.height = adjustedLocation.y - rect.minY
+                        case .bottomRight:
+                            newRect.size.width = adjustedLocation.x - rect.minX
+                            newRect.size.height = adjustedLocation.y - rect.minY
+                        }
+
+                        // Constrain aspect ratio when shift is held
+                        if shiftHeld && rect.width > 0 && rect.height > 0 {
+                            var originalAspect = rect.width / rect.height
+                            // Snap to 1:1 if very close (handles floating point imprecision from shift-created squares)
+                            if abs(originalAspect - 1.0) < 0.02 {
+                                originalAspect = 1.0
+                            }
+
+                            let size = max(abs(newRect.width), abs(newRect.height))
+                            let adjustedWidth = size * (newRect.width < 0 ? -1 : 1)
+                            let adjustedHeight = size / originalAspect * (newRect.height < 0 ? -1 : 1)
+
+                            switch handle {
+                            case .topLeft:
+                                newRect.origin.x = rect.maxX - adjustedWidth
+                                newRect.origin.y = rect.maxY - adjustedHeight
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .topRight:
+                                newRect.origin.y = rect.maxY - adjustedHeight
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .bottomLeft:
+                                newRect.origin.x = rect.maxX - adjustedWidth
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
+                            case .bottomRight:
+                                newRect.size.width = adjustedWidth
+                                newRect.size.height = adjustedHeight
                             }
                         }
 
@@ -614,6 +741,8 @@ struct DrawingCanvasView: View {
             let nextIndex = min(lowestIndex, canvasState.annotations.count - 1)
             canvasState.selectedAnnotationIds = [canvasState.annotations[nextIndex].id]
         }
+
+        NSApp.keyWindow?.toolbar?.validateVisibleItems()
     }
 
     private func updateCursor(at location: CGPoint) {
@@ -695,6 +824,7 @@ struct DrawingCanvasView: View {
                 canvasState.annotations.append(annotation)
                 canvasState.selectedAnnotationIds = [annotation.id]
                 canvasState.currentAnnotation = nil
+                NSApp.keyWindow?.toolbar?.validateVisibleItems()
             }
         }
 
