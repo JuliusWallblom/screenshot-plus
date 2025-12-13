@@ -36,30 +36,20 @@ struct DrawingCanvasView: View {
     @State private var currentRotationDegrees: Double = 0
     @State private var wasAlreadySelected: Bool = false
 
-    // Convert screen point to image coordinates
+    private var coordinateSpace: CoordinateSpace {
+        CoordinateSpace(imageSize: canvasState.imageSize, screenRect: imageRect)
+    }
+
     private func screenToImage(_ point: CGPoint) -> CGPoint {
-        guard canvasState.imageSize.width > 0, imageRect.width > 0 else { return point }
-        let scale = canvasState.imageSize.width / imageRect.width
-        return CGPoint(
-            x: (point.x - imageRect.minX) * scale,
-            y: (point.y - imageRect.minY) * scale
-        )
+        coordinateSpace.screenToImage(point)
     }
 
-    // Convert image point to screen coordinates
     private func imageToScreen(_ point: CGPoint) -> CGPoint {
-        guard canvasState.imageSize.width > 0, imageRect.width > 0 else { return point }
-        let scale = imageRect.width / canvasState.imageSize.width
-        return CGPoint(
-            x: point.x * scale + imageRect.minX,
-            y: point.y * scale + imageRect.minY
-        )
+        coordinateSpace.imageToScreen(point)
     }
 
-    // Scale factor for stroke widths and font sizes
     private var displayScale: CGFloat {
-        guard canvasState.imageSize.width > 0 else { return 1 }
-        return imageRect.width / canvasState.imageSize.width
+        coordinateSpace.scale
     }
 
     var body: some View {
