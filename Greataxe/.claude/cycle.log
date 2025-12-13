@@ -19,3 +19,4 @@
 [2025-12-14 00:03:10] Fixed line resize direction flipping bug
 [2025-12-14 00:06:37] Fixed saved images triggering screenshot monitor (infinite save loop)
 [2025-12-14 00:09:28] Fixed save loop with time-based ignore (5 sec window) + path check
+[2025-12-14 00:15:41] Fixed save loop using NotificationCenter, added close-on-save

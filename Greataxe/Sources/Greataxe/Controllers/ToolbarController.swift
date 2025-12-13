@@ -221,8 +221,16 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
             // Mark file as saved by app to prevent screenshot monitor from reopening it
             ScreenshotMonitor.ignoreSavedFile(url)
             _ = exporter.saveToFile(rendered, at: url)
-            // Close the window after saving
-            NSApp.keyWindow?.close()
+            // Close the window after saving (defer to let save panel fully dismiss)
+            DispatchQueue.main.async {
+                // Find window with our toolbar and close it
+                for window in NSApp.windows {
+                    if window.toolbar === self.toolbar {
+                        window.close()
+                        break
+                    }
+                }
+            }
         }
     }
 }
