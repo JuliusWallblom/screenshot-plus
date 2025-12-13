@@ -107,10 +107,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowContexts.removeValue(forKey: window)
     }
 
-    /// Mark a file as saved by the app so it won't trigger screenshot detection
-    func ignoreSavedFile(_ url: URL) {
-        screenshotMonitor?.ignoreFile(url)
-    }
 
     private func getScreenshotDirectory() -> URL {
         if let customPath = UserDefaults.standard.persistentDomain(forName: "com.apple.screencapture")?["location"] as? String {

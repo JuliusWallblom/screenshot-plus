@@ -219,8 +219,10 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
 
         if panel.runModal() == .OK, let url = panel.url {
             // Mark file as saved by app to prevent screenshot monitor from reopening it
-            (NSApp.delegate as? AppDelegate)?.ignoreSavedFile(url)
+            ScreenshotMonitor.ignoreSavedFile(url)
             _ = exporter.saveToFile(rendered, at: url)
+            // Close the window after saving
+            NSApp.keyWindow?.close()
         }
     }
 }

@@ -1,5 +1,9 @@
 import Foundation
 
+extension Notification.Name {
+    static let ignoreSavedFile = Notification.Name("com.greataxe.ignoreSavedFile")
+}
+
 final class ScreenshotMonitor {
     private let watchDirectory: URL
     private var dispatchSource: DispatchSourceFileSystemObject?
@@ -14,14 +18,35 @@ final class ScreenshotMonitor {
 
     init(watchDirectory: URL) {
         self.watchDirectory = watchDirectory
+
+        // Listen for save notifications
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleIgnoreFile(_:)),
+            name: .ignoreSavedFile,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func handleIgnoreFile(_ notification: Notification) {
+        guard let url = notification.object as? URL else { return }
+        ignoreFile(url)
     }
 
     /// Mark a file as saved by the app so it won't trigger screenshot detection
     func ignoreFile(_ url: URL) {
-        // Always add to ignore list - the filename is what matters since we only monitor one directory
         let filename = url.lastPathComponent
         ignoredFiles[filename] = Date()
         knownFiles.insert(filename)
+    }
+
+    /// Post notification to ignore a saved file (call this from anywhere)
+    static func ignoreSavedFile(_ url: URL) {
+        NotificationCenter.default.post(name: .ignoreSavedFile, object: url)
     }
 
     private func isIgnored(_ filename: String) -> Bool {
@@ -29,7 +54,6 @@ final class ScreenshotMonitor {
         if Date().timeIntervalSince(ignoredAt) < ignoreDuration {
             return true
         }
-        // Expired - remove from ignore list
         ignoredFiles.removeValue(forKey: filename)
         return false
     }
@@ -75,7 +99,6 @@ final class ScreenshotMonitor {
 
         let newFiles = Set(currentFiles).subtracting(knownFiles)
         for filename in newFiles {
-            // Skip files that were saved by the app (time-based check handles multiple events)
             if isIgnored(filename) {
                 continue
             }
