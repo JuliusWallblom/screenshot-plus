@@ -14,3 +14,4 @@
 [2025-12-13 23:48:38] Added AppSettings integration to CanvasState (export/import)
 [2025-12-13 23:50:07] Created AnnotationCommand protocol and command implementations
 [2025-12-13 23:52:18] Added Result-based error handling for file operations
+[2025-12-13 23:59:30] Reorganized codebase into folder structure (App, Models, Views, Controllers, Services, Utilities, Commands, Errors)

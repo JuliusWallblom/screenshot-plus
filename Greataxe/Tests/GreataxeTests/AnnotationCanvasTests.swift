@@ -23,16 +23,39 @@ struct AnnotationCanvasTests {
 
     @Test("Annotation computes bounding rect correctly")
     func annotationComputesBoundingRect() {
+        let strokeWidth: CGFloat = 1.0
         let annotation = Annotation(
             type: .rectangle,
             startPoint: CGPoint(x: 100, y: 50),
             endPoint: CGPoint(x: 50, y: 100),
             strokeColor: .blue,
-            strokeWidth: 1.0
+            strokeWidth: strokeWidth
         )
 
         let rect = annotation.boundingRect
 
+        // Bounding rect includes stroke padding for stroked (non-filled) shapes
+        // minX=50, minY=50, width=50, height=50 + strokeWidth padding on all sides
+        #expect(rect.origin.x == 50 - strokeWidth)
+        #expect(rect.origin.y == 50 - strokeWidth)
+        #expect(rect.width == 50 + strokeWidth * 2)
+        #expect(rect.height == 50 + strokeWidth * 2)
+    }
+
+    @Test("Filled annotation bounding rect has no stroke padding")
+    func filledAnnotationBoundingRectHasNoStrokePadding() {
+        var annotation = Annotation(
+            type: .rectangle,
+            startPoint: CGPoint(x: 100, y: 50),
+            endPoint: CGPoint(x: 50, y: 100),
+            strokeColor: .blue,
+            strokeWidth: 2.0
+        )
+        annotation.isFilled = true
+
+        let rect = annotation.boundingRect
+
+        // Filled shapes don't add stroke padding
         #expect(rect.origin.x == 50)
         #expect(rect.origin.y == 50)
         #expect(rect.width == 50)
@@ -41,6 +64,9 @@ struct AnnotationCanvasTests {
 
     @Test("CanvasState tracks current tool")
     func canvasStateTracksCurrentTool() {
+        // Clear persisted tool setting to test default behavior
+        UserDefaults.standard.removeObject(forKey: "currentTool")
+
         let canvasState = CanvasState()
 
         #expect(canvasState.currentTool == .rectangle)
