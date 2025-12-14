@@ -54,4 +54,28 @@ struct CanvasStateSettingsTests {
         #expect(canvasState.selectedAnnotationIds.contains(rectangleAnnotation.id))
         #expect(canvasState.currentTool == .rectangle)
     }
+
+    @Test("Selecting annotation updates design settings to match annotation")
+    func selectAnnotationUpdatesDesignSettings() {
+        let canvasState = CanvasState()
+        canvasState.strokeColor = .blue
+        canvasState.strokeWidth = 2.0
+        canvasState.fillShapes = false
+
+        var annotation = Annotation(
+            type: .rectangle,
+            startPoint: .zero,
+            endPoint: CGPoint(x: 100, y: 100),
+            strokeColor: .red,
+            strokeWidth: 4.0
+        )
+        annotation.isFilled = true
+        canvasState.annotations.append(annotation)
+
+        canvasState.selectAnnotation(annotation)
+
+        #expect(canvasState.strokeColor == .red)
+        #expect(canvasState.strokeWidth == 4.0)
+        #expect(canvasState.fillShapes == true)
+    }
 }

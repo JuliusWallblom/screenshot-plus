@@ -246,10 +246,13 @@ final class CanvasState: ObservableObject {
         selectedAnnotationIds.contains(annotation.id)
     }
 
-    /// Selects the annotation and updates the current tool to match its type.
+    /// Selects the annotation and updates the current tool and design settings to match.
     func selectAnnotation(_ annotation: Annotation) {
         selectedAnnotationIds = [annotation.id]
         currentTool = annotation.type.correspondingTool
+        strokeColor = annotation.strokeColor
+        strokeWidth = annotation.strokeWidth
+        fillShapes = annotation.isFilled
     }
 
     func updateSelectedAnnotations(_ transform: (inout Annotation) -> Void) {
