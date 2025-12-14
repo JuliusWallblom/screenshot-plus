@@ -42,4 +42,32 @@ struct ToolbarControllerTests {
         // Toolbar should sync
         #expect(controller.currentToolsGroupIndex == 2) // oval is at index 2
     }
+
+    @Test("Changing tool via toolbar clears annotation selection")
+    func changingToolViaToolbarClearsSelection() {
+        let canvasState = CanvasState()
+        canvasState.currentTool = .rectangle
+        let windowState = AnnotationWindowState(imageURL: URL(fileURLWithPath: "/tmp/test.png"))
+        let controller = ToolbarController(canvasState: canvasState, windowState: windowState)
+
+        // Add an annotation and select it
+        let annotation = Annotation(
+            type: .rectangle,
+            startPoint: .zero,
+            endPoint: CGPoint(x: 100, y: 100),
+            strokeColor: .red,
+            strokeWidth: 2
+        )
+        canvasState.annotations.append(annotation)
+        canvasState.selectedAnnotationIds = [annotation.id]
+
+        // Verify annotation is selected
+        #expect(canvasState.selectedAnnotationIds.count == 1)
+
+        // Simulate user clicking a different tool in the toolbar
+        controller.selectTool(.oval)
+
+        // Selection should be cleared
+        #expect(canvasState.selectedAnnotationIds.isEmpty)
+    }
 }

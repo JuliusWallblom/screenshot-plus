@@ -176,8 +176,14 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
     @objc private func toolGroupChanged(_ sender: NSToolbarItemGroup) {
         let index = sender.selectedIndex
         if index >= 0 && index < toolOrder.count {
-            canvasState.currentTool = toolOrder[index]
+            selectTool(toolOrder[index])
         }
+    }
+
+    /// Selects the drawing tool and clears any annotation selection.
+    func selectTool(_ tool: DrawingTool) {
+        canvasState.currentTool = tool
+        canvasState.selectedAnnotationIds.removeAll()
     }
 
     @objc private func showSettingsPopover(_ sender: NSButton) {
