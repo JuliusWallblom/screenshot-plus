@@ -9,13 +9,15 @@
     <key>CFBundleIdentifier</key>
     <string>com.screenshotplus.app</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>10</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.9</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>Screenshot+</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSUIElement</key>
