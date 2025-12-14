@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Combine
 
 func createLineWidthImage(width: CGFloat, color: NSColor, size: NSSize = NSSize(width: 40, height: 16)) -> NSImage {
     let image = NSImage(size: size)
@@ -24,6 +25,12 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
     private var copyItem: NSToolbarItem?
     private var isCopyFeedbackShowing = false
     private weak var toolbar: NSToolbar?
+    private var cancellables = Set<AnyCancellable>()
+    private let toolOrder: [DrawingTool] = [.select, .rectangle, .oval, .line, .arrow, .pen, .text]
+
+    var currentToolsGroupIndex: Int {
+        toolsGroup?.selectedIndex ?? -1
+    }
 
     private let itemIdentifiers: [NSToolbarItem.Identifier] = [
         .init("padding"),
@@ -41,6 +48,21 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
     init(canvasState: CanvasState, windowState: AnnotationWindowState) {
         self.canvasState = canvasState
         self.windowState = windowState
+        super.init()
+        setupToolObserver()
+    }
+
+    private func setupToolObserver() {
+        canvasState.$currentTool
+            .dropFirst() // Skip initial value, we set it when creating the group
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newTool in
+                guard let self = self, let group = self.toolsGroup else { return }
+                if let index = self.toolOrder.firstIndex(of: newTool) {
+                    group.selectedIndex = index
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func setToolbar(_ toolbar: NSToolbar) {
@@ -110,7 +132,6 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
                 group.subitems[index].toolTip = tool.2
             }
 
-            let toolOrder: [DrawingTool] = [.select, .rectangle, .oval, .line, .arrow, .pen, .text]
             group.selectedIndex = toolOrder.firstIndex(of: canvasState.currentTool) ?? 1
 
             group.label = "Tools"
@@ -153,10 +174,9 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
     }
 
     @objc private func toolGroupChanged(_ sender: NSToolbarItemGroup) {
-        let tools: [DrawingTool] = [.select, .rectangle, .oval, .line, .arrow, .pen, .text]
         let index = sender.selectedIndex
-        if index >= 0 && index < tools.count {
-            canvasState.currentTool = tools[index]
+        if index >= 0 && index < toolOrder.count {
+            canvasState.currentTool = toolOrder[index]
         }
     }
 

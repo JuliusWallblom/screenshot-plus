@@ -9,6 +9,17 @@ enum AnnotationType: Equatable {
     case arrow
     case pen
     case text
+
+    var correspondingTool: DrawingTool {
+        switch self {
+        case .rectangle: return .rectangle
+        case .oval: return .oval
+        case .line: return .line
+        case .arrow: return .arrow
+        case .pen: return .pen
+        case .text: return .text
+        }
+    }
 }
 
 enum TextAlignment: String, CaseIterable {
