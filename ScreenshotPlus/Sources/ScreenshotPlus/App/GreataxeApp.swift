@@ -8,7 +8,7 @@ struct GreataxeApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
+            PreferencesView()
         }
     }
 }
@@ -58,6 +58,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         screenshotMonitor?.startMonitoring()
 
         setupEditMenu()
+
+        // Check for updates on launch (silent - won't show "up to date" alert)
+        UpdateService.shared.checkForUpdates(silent: true)
     }
 
     private func setupEditMenu() {
