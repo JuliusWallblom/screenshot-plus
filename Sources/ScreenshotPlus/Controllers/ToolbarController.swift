@@ -21,6 +21,8 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
     private var settingsPopover: NSPopover?
     private var undoItem: NSToolbarItem?
     private var redoItem: NSToolbarItem?
+    private var copyItem: NSToolbarItem?
+    private var isCopyFeedbackShowing = false
     private weak var toolbar: NSToolbar?
 
     private let itemIdentifiers: [NSToolbarItem.Identifier] = [
@@ -127,11 +129,13 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
 
         case "copy":
             let item = NSToolbarItem(itemIdentifier: itemIdentifier)
-            item.image = NSImage(systemSymbolName: "clipboard", accessibilityDescription: "Copy")
+            item.image = NSImage(systemSymbolName: "square.on.square", accessibilityDescription: "Copy")
             item.label = "Copy"
             item.toolTip = "Copy to Clipboard (⌘C)"
             item.target = self
             item.action = #selector(copyImage)
+            item.autovalidates = true
+            copyItem = item
             return item
 
         case "save":
@@ -194,6 +198,8 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
             return canvasState.canUndo
         case "redo":
             return canvasState.canRedo
+        case "copy":
+            return !isCopyFeedbackShowing
         default:
             return true
         }
@@ -205,6 +211,17 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
             return
         }
         _ = exporter.copyToClipboard(rendered)
+
+        // Show checkmark feedback
+        isCopyFeedbackShowing = true
+        copyItem?.image = NSImage(systemSymbolName: "checkmark", accessibilityDescription: "Copied")
+        toolbar?.validateVisibleItems()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in
+            self?.isCopyFeedbackShowing = false
+            self?.copyItem?.image = NSImage(systemSymbolName: "square.on.square", accessibilityDescription: "Copy")
+            self?.toolbar?.validateVisibleItems()
+        }
     }
 
     @objc private func saveImage() {
