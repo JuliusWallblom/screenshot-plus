@@ -52,4 +52,14 @@ struct AnnotationTypeExtensionsTests {
         #expect(oval.canBeFilled == true)
         #expect(line.canBeFilled == false)
     }
+
+    @Test("correspondingTool returns matching DrawingTool for each AnnotationType")
+    func correspondingToolMapsCorrectly() {
+        #expect(AnnotationType.rectangle.correspondingTool == .rectangle)
+        #expect(AnnotationType.oval.correspondingTool == .oval)
+        #expect(AnnotationType.line.correspondingTool == .line)
+        #expect(AnnotationType.arrow.correspondingTool == .arrow)
+        #expect(AnnotationType.pen.correspondingTool == .pen)
+        #expect(AnnotationType.text.correspondingTool == .text)
+    }
 }
