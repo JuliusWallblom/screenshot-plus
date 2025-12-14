@@ -246,6 +246,11 @@ final class CanvasState: ObservableObject {
         selectedAnnotationIds.contains(annotation.id)
     }
 
+    func selectAnnotation(_ annotation: Annotation) {
+        selectedAnnotationIds = [annotation.id]
+        currentTool = annotation.type.correspondingTool
+    }
+
     func updateSelectedAnnotations(_ transform: (inout Annotation) -> Void) {
         for id in selectedAnnotationIds {
             if let index = annotations.firstIndex(where: { $0.id == id }) {

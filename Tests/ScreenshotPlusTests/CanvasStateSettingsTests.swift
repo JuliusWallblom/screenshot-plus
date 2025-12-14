@@ -34,4 +34,24 @@ struct CanvasStateSettingsTests {
         #expect(canvasState.currentTool == .arrow)
         #expect(canvasState.textFontSize == 24.0)
     }
+
+    @Test("Selecting annotation updates currentTool to match annotation type")
+    func selectAnnotationUpdatesCurrentTool() {
+        let canvasState = CanvasState()
+        canvasState.currentTool = .pen
+
+        let rectangleAnnotation = Annotation(
+            type: .rectangle,
+            startPoint: .zero,
+            endPoint: CGPoint(x: 100, y: 100),
+            strokeColor: .red,
+            strokeWidth: 2
+        )
+        canvasState.annotations.append(rectangleAnnotation)
+
+        canvasState.selectAnnotation(rectangleAnnotation)
+
+        #expect(canvasState.selectedAnnotationIds.contains(rectangleAnnotation.id))
+        #expect(canvasState.currentTool == .rectangle)
+    }
 }

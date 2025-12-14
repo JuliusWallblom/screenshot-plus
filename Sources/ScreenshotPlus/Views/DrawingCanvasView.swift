@@ -285,7 +285,7 @@ struct DrawingCanvasView: View {
 
             // Check if clicking on an unselected annotation to select it (any tool)
             if let annotation = hitTestAnnotation(screenPoint: screenStart) {
-                canvasState.selectedAnnotationIds = [annotation.id]
+                canvasState.selectAnnotation(annotation)
                 canvasState.saveState()
                 dragMode = .moving
                 originalAnnotation = annotation
