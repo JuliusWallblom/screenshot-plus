@@ -246,6 +246,7 @@ final class CanvasState: ObservableObject {
         selectedAnnotationIds.contains(annotation.id)
     }
 
+    /// Selects the annotation and updates the current tool to match its type.
     func selectAnnotation(_ annotation: Annotation) {
         selectedAnnotationIds = [annotation.id]
         currentTool = annotation.type.correspondingTool
