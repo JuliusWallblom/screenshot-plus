@@ -180,6 +180,7 @@ class ToolbarController: NSObject, NSToolbarDelegate, NSPopoverDelegate, NSToolb
         }
     }
 
+    /// Selects the drawing tool and clears any annotation selection.
     func selectTool(_ tool: DrawingTool) {
         canvasState.currentTool = tool
         canvasState.selectedAnnotationIds.removeAll()
