@@ -253,6 +253,19 @@ final class CanvasState: ObservableObject {
         strokeColor = annotation.strokeColor
         strokeWidth = annotation.strokeWidth
         fillShapes = annotation.isFilled
+
+        // Sync text-specific settings for text annotations
+        if annotation.type == .text {
+            textFontSize = annotation.fontSize
+            textFontName = annotation.fontName
+            textAlignment = annotation.textAlignment
+            textBackgroundColor = annotation.textBackgroundColor
+            textBackgroundPaddingTop = annotation.textBackgroundPaddingTop
+            textBackgroundPaddingRight = annotation.textBackgroundPaddingRight
+            textBackgroundPaddingBottom = annotation.textBackgroundPaddingBottom
+            textBackgroundPaddingLeft = annotation.textBackgroundPaddingLeft
+            textBackgroundCornerRadius = annotation.textBackgroundCornerRadius
+        }
     }
 
     func updateSelectedAnnotations(_ transform: (inout Annotation) -> Void) {

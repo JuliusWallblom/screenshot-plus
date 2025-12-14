@@ -78,4 +78,33 @@ struct CanvasStateSettingsTests {
         #expect(canvasState.strokeWidth == 4.0)
         #expect(canvasState.fillShapes == true)
     }
+
+    @Test("Selecting text annotation updates text-specific settings")
+    func selectTextAnnotationUpdatesTextSettings() {
+        let canvasState = CanvasState()
+        canvasState.textFontSize = 16
+        canvasState.textFontName = "System"
+        canvasState.textAlignment = .left
+        canvasState.textBackgroundColor = nil
+
+        var textAnnotation = Annotation(
+            type: .text,
+            startPoint: .zero,
+            endPoint: .zero,
+            strokeColor: .red,
+            strokeWidth: 2
+        )
+        textAnnotation.fontSize = 24
+        textAnnotation.fontName = "Helvetica"
+        textAnnotation.textAlignment = .center
+        textAnnotation.textBackgroundColor = .yellow
+        canvasState.annotations.append(textAnnotation)
+
+        canvasState.selectAnnotation(textAnnotation)
+
+        #expect(canvasState.textFontSize == 24)
+        #expect(canvasState.textFontName == "Helvetica")
+        #expect(canvasState.textAlignment == .center)
+        #expect(canvasState.textBackgroundColor == .yellow)
+    }
 }
