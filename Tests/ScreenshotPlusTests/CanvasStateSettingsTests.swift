@@ -54,4 +54,57 @@ struct CanvasStateSettingsTests {
         #expect(canvasState.selectedAnnotationIds.contains(rectangleAnnotation.id))
         #expect(canvasState.currentTool == .rectangle)
     }
+
+    @Test("Selecting annotation updates design settings to match annotation")
+    func selectAnnotationUpdatesDesignSettings() {
+        let canvasState = CanvasState()
+        canvasState.strokeColor = .blue
+        canvasState.strokeWidth = 2.0
+        canvasState.fillShapes = false
+
+        var annotation = Annotation(
+            type: .rectangle,
+            startPoint: .zero,
+            endPoint: CGPoint(x: 100, y: 100),
+            strokeColor: .red,
+            strokeWidth: 4.0
+        )
+        annotation.isFilled = true
+        canvasState.annotations.append(annotation)
+
+        canvasState.selectAnnotation(annotation)
+
+        #expect(canvasState.strokeColor == .red)
+        #expect(canvasState.strokeWidth == 4.0)
+        #expect(canvasState.fillShapes == true)
+    }
+
+    @Test("Selecting text annotation updates text-specific settings")
+    func selectTextAnnotationUpdatesTextSettings() {
+        let canvasState = CanvasState()
+        canvasState.textFontSize = 16
+        canvasState.textFontName = "System"
+        canvasState.textAlignment = .left
+        canvasState.textBackgroundColor = nil
+
+        var textAnnotation = Annotation(
+            type: .text,
+            startPoint: .zero,
+            endPoint: .zero,
+            strokeColor: .red,
+            strokeWidth: 2
+        )
+        textAnnotation.fontSize = 24
+        textAnnotation.fontName = "Helvetica"
+        textAnnotation.textAlignment = .center
+        textAnnotation.textBackgroundColor = .yellow
+        canvasState.annotations.append(textAnnotation)
+
+        canvasState.selectAnnotation(textAnnotation)
+
+        #expect(canvasState.textFontSize == 24)
+        #expect(canvasState.textFontName == "Helvetica")
+        #expect(canvasState.textAlignment == .center)
+        #expect(canvasState.textBackgroundColor == .yellow)
+    }
 }

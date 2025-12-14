@@ -246,10 +246,26 @@ final class CanvasState: ObservableObject {
         selectedAnnotationIds.contains(annotation.id)
     }
 
-    /// Selects the annotation and updates the current tool to match its type.
+    /// Selects the annotation and updates the current tool and design settings to match.
     func selectAnnotation(_ annotation: Annotation) {
         selectedAnnotationIds = [annotation.id]
         currentTool = annotation.type.correspondingTool
+        strokeColor = annotation.strokeColor
+        strokeWidth = annotation.strokeWidth
+        fillShapes = annotation.isFilled
+
+        // Sync text-specific settings for text annotations
+        if annotation.type == .text {
+            textFontSize = annotation.fontSize
+            textFontName = annotation.fontName
+            textAlignment = annotation.textAlignment
+            textBackgroundColor = annotation.textBackgroundColor
+            textBackgroundPaddingTop = annotation.textBackgroundPaddingTop
+            textBackgroundPaddingRight = annotation.textBackgroundPaddingRight
+            textBackgroundPaddingBottom = annotation.textBackgroundPaddingBottom
+            textBackgroundPaddingLeft = annotation.textBackgroundPaddingLeft
+            textBackgroundCornerRadius = annotation.textBackgroundCornerRadius
+        }
     }
 
     func updateSelectedAnnotations(_ transform: (inout Annotation) -> Void) {
