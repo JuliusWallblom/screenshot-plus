@@ -1,6 +1,6 @@
-# Greataxe
+# ScreenshotPlus
 
-A native macOS screenshot annotation tool. When you take a screenshot, Greataxe opens it in an annotation window where you can draw shapes, add text, and export the result.
+A native macOS screenshot annotation tool. When you take a screenshot, ScreenshotPlus opens it in an annotation window where you can draw shapes, add text, and export the result.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ A native macOS screenshot annotation tool. When you take a screenshot, Greataxe 
 ## Building
 
 ```bash
-cd Greataxe
+cd ScreenshotPlus
 swift build
 ```
 
@@ -22,7 +22,7 @@ swift run
 ## Running Tests
 
 ```bash
-cd Greataxe
+cd ScreenshotPlus
 swift test
 ```
 
@@ -42,8 +42,8 @@ swift test
 The app is built with SwiftUI and uses Swift Package Manager:
 
 ```
-Greataxe/
-├── Sources/Greataxe/
+ScreenshotPlus/
+├── Sources/ScreenshotPlus/
 │   ├── GreataxeApp.swift          # App entry point
 │   ├── AnnotationView.swift       # Main annotation window
 │   ├── AnnotationToolbarView.swift # Toolbar with tools

@@ -4,54 +4,54 @@
             "type": "lldb",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:Greataxe}",
-            "name": "Debug Greataxe",
-            "program": "${workspaceFolder:Greataxe}/.build/debug/Greataxe",
-            "preLaunchTask": "swift: Build Debug Greataxe"
+            "cwd": "${workspaceFolder:ScreenshotPlus}",
+            "name": "Debug ScreenshotPlus",
+            "program": "${workspaceFolder:ScreenshotPlus}/.build/debug/ScreenshotPlus",
+            "preLaunchTask": "swift: Build Debug ScreenshotPlus"
         },
         {
             "type": "lldb",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:Greataxe}",
-            "name": "Release Greataxe",
-            "program": "${workspaceFolder:Greataxe}/.build/release/Greataxe",
-            "preLaunchTask": "swift: Build Release Greataxe"
+            "cwd": "${workspaceFolder:ScreenshotPlus}",
+            "name": "Release ScreenshotPlus",
+            "program": "${workspaceFolder:ScreenshotPlus}/.build/release/ScreenshotPlus",
+            "preLaunchTask": "swift: Build Release ScreenshotPlus"
         },
         {
             "type": "lldb",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:Greataxe}",
+            "cwd": "${workspaceFolder:ScreenshotPlus}",
             "name": "Debug Preview+",
-            "program": "${workspaceFolder:Greataxe}/.build/debug/Preview+",
+            "program": "${workspaceFolder:ScreenshotPlus}/.build/debug/Preview+",
             "preLaunchTask": "swift: Build Debug Preview+"
         },
         {
             "type": "lldb",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:Greataxe}",
+            "cwd": "${workspaceFolder:ScreenshotPlus}",
             "name": "Release Preview+",
-            "program": "${workspaceFolder:Greataxe}/.build/release/Preview+",
+            "program": "${workspaceFolder:ScreenshotPlus}/.build/release/Preview+",
             "preLaunchTask": "swift: Build Release Preview+"
         },
         {
             "type": "lldb",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:Greataxe}",
+            "cwd": "${workspaceFolder:ScreenshotPlus}",
             "name": "Debug Screenshot+",
-            "program": "${workspaceFolder:Greataxe}/.build/debug/Screenshot+",
+            "program": "${workspaceFolder:ScreenshotPlus}/.build/debug/Screenshot+",
             "preLaunchTask": "swift: Build Debug Screenshot+"
         },
         {
             "type": "lldb",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:Greataxe}",
+            "cwd": "${workspaceFolder:ScreenshotPlus}",
             "name": "Release Screenshot+",
-            "program": "${workspaceFolder:Greataxe}/.build/release/Screenshot+",
+            "program": "${workspaceFolder:ScreenshotPlus}/.build/release/Screenshot+",
             "preLaunchTask": "swift: Build Release Screenshot+"
         }
     ]

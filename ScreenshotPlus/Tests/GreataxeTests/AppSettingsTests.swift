@@ -36,7 +36,7 @@ struct AppSettingsTests {
     @Test("AppSettings saves and loads from UserDefaults")
     func savesAndLoadsFromUserDefaults() throws {
         // Use a separate suite for testing
-        let suiteName = "com.greataxe.test.\(UUID().uuidString)"
+        let suiteName = "com.screenshotplus.test.\(UUID().uuidString)"
         guard let suite = UserDefaults(suiteName: suiteName) else {
             Issue.record("Could not create test UserDefaults suite")
             return

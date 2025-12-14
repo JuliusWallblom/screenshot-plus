@@ -12,7 +12,7 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "Screenshot+",
-            path: "Sources/Greataxe",
+            path: "Sources/ScreenshotPlus",
             exclude: ["Info.plist"]
         ),
         .testTarget(

@@ -1,7 +1,7 @@
 import Foundation
 
 extension Notification.Name {
-    static let ignoreSavedFile = Notification.Name("com.greataxe.ignoreSavedFile")
+    static let ignoreSavedFile = Notification.Name("com.screenshotplus.ignoreSavedFile")
 }
 
 final class ScreenshotMonitor {

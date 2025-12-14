@@ -22,7 +22,7 @@ mkdir -p "$DIST_DIR/$APP_BUNDLE/Contents/Resources"
 cp "$BUILD_DIR/$APP_NAME" "$DIST_DIR/$APP_BUNDLE/Contents/MacOS/"
 
 # Copy Info.plist
-cp "Sources/Greataxe/Info.plist" "$DIST_DIR/$APP_BUNDLE/Contents/"
+cp "Sources/ScreenshotPlus/Info.plist" "$DIST_DIR/$APP_BUNDLE/Contents/"
 
 # Create PkgInfo
 echo -n "APPL????" > "$DIST_DIR/$APP_BUNDLE/Contents/PkgInfo"

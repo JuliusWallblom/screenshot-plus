@@ -14,7 +14,7 @@ final class MenuBarController {
     func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "app.background.dotted", accessibilityDescription: "Greataxe")
+            button.image = NSImage(systemSymbolName: "app.background.dotted", accessibilityDescription: "ScreenshotPlus")
         }
         statusItem?.menu = menu
     }
