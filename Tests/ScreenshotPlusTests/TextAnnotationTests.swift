@@ -60,4 +60,46 @@ struct TextAnnotationTests {
         #expect(annotation?.text == "Test text")
         #expect(annotation?.type == .text)
     }
+
+    @Test("Text stroke attributes are included when textStrokeColor is set")
+    func textStrokeAttributesIncluded() {
+        var annotation = Annotation(
+            type: .text,
+            startPoint: CGPoint(x: 50, y: 50),
+            endPoint: CGPoint(x: 50, y: 50),
+            strokeColor: .black,
+            strokeWidth: 1.0
+        )
+        annotation.textStrokeColor = .red
+        annotation.textStrokeWidth = 2.0
+
+        let attributes = TextAttributeBuilder.buildAttributes(for: annotation)
+
+        // Verify stroke attributes are present
+        #expect(attributes[.strokeColor] != nil)
+        #expect(attributes[.strokeWidth] != nil)
+
+        // Verify negative stroke width (for fill + stroke)
+        let strokeWidth = attributes[.strokeWidth] as? CGFloat
+        #expect(strokeWidth != nil)
+        #expect(strokeWidth! < 0)
+    }
+
+    @Test("Text stroke attributes are not included when textStrokeColor is nil")
+    func textStrokeAttributesNotIncludedWhenNil() {
+        let annotation = Annotation(
+            type: .text,
+            startPoint: CGPoint(x: 50, y: 50),
+            endPoint: CGPoint(x: 50, y: 50),
+            strokeColor: .black,
+            strokeWidth: 1.0
+        )
+        // textStrokeColor defaults to nil
+
+        let attributes = TextAttributeBuilder.buildAttributes(for: annotation)
+
+        // Verify stroke attributes are NOT present
+        #expect(attributes[.strokeColor] == nil)
+        #expect(attributes[.strokeWidth] == nil)
+    }
 }

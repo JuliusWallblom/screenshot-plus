@@ -803,6 +803,8 @@ struct DrawingCanvasView: View {
             annotation.textBackgroundPaddingLeft = canvasState.textBackgroundPaddingLeft
             annotation.textBackgroundCornerRadius = canvasState.textBackgroundCornerRadius
             annotation.textAlignment = canvasState.textAlignment
+            annotation.textStrokeColor = canvasState.textStrokeColor
+            annotation.textStrokeWidth = canvasState.textStrokeWidth
 
             newTextAnnotation = annotation
             isCreatingNewText = true
@@ -1236,6 +1238,8 @@ struct TextAnnotationView: View {
             font: nsFont,
             textColor: NSColor(annotation.strokeColor),
             alignment: annotation.textAlignment,
+            strokeColor: annotation.textStrokeColor.map { NSColor($0) },
+            strokeWidth: annotation.textStrokeWidth * displayScale,
             isEditing: isEditing,
             onTextChange: onTextChange,
             onCommit: onCommit,
@@ -1279,6 +1283,8 @@ struct TextViewWrapper: NSViewRepresentable {
     let font: NSFont
     let textColor: NSColor
     let alignment: TextAlignment
+    let strokeColor: NSColor?
+    let strokeWidth: CGFloat
     let isEditing: Bool
     let onTextChange: (String) -> Void
     let onCommit: () -> Void
@@ -1287,11 +1293,9 @@ struct TextViewWrapper: NSViewRepresentable {
     func makeNSView(context: Context) -> AnnotationTextView {
         let textView = AnnotationTextView()
         textView.delegate = context.coordinator
-        textView.font = font
-        textView.textColor = textColor
         textView.backgroundColor = .clear
         textView.drawsBackground = false
-        textView.isRichText = false
+        textView.isRichText = true  // Need rich text for stroke attributes
         textView.textContainerInset = .zero
         textView.textContainer?.lineFragmentPadding = 0
 
@@ -1310,7 +1314,23 @@ struct TextViewWrapper: NSViewRepresentable {
         }
         textView.alignment = nsAlignment
 
-        textView.string = text
+        // Build attributes with optional stroke
+        var attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor
+        ]
+        if let strokeColor = strokeColor {
+            attributes[.strokeColor] = strokeColor
+            attributes[.strokeWidth] = -strokeWidth  // Negative for fill + stroke
+        }
+
+        // Apply text with attributes
+        let attributedString = NSAttributedString(string: text, attributes: attributes)
+        textView.textStorage?.setAttributedString(attributedString)
+
+        // Set typing attributes for new text
+        textView.typingAttributes = attributes
+
         textView.isEditable = isEditing
         textView.isSelectable = isEditing
         textView.onCommit = onCommit
@@ -1328,17 +1348,24 @@ struct TextViewWrapper: NSViewRepresentable {
     }
 
     func updateNSView(_ textView: AnnotationTextView, context: Context) {
-        // Only update text if not currently editing (to avoid cursor jumps)
-        if !isEditing && textView.string != text {
-            textView.string = text
+        // Build attributes with optional stroke
+        var attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor
+        ]
+        if let strokeColor = strokeColor {
+            attributes[.strokeColor] = strokeColor
+            attributes[.strokeWidth] = -strokeWidth  // Negative for fill + stroke
         }
 
-        textView.font = font
-        textView.textColor = textColor
-        textView.isEditable = isEditing
-        textView.isSelectable = isEditing
-        textView.onCommit = onCommit
-        textView.onCancel = onCancel
+        // Only update text if not currently editing (to avoid cursor jumps)
+        if !isEditing && textView.string != text {
+            let attributedString = NSAttributedString(string: text, attributes: attributes)
+            textView.textStorage?.setAttributedString(attributedString)
+        }
+
+        // Always update typing attributes and alignment
+        textView.typingAttributes = attributes
 
         let nsAlignment: NSTextAlignment
         switch alignment {
@@ -1347,6 +1374,17 @@ struct TextViewWrapper: NSViewRepresentable {
         case .right: nsAlignment = .right
         }
         textView.alignment = nsAlignment
+
+        textView.isEditable = isEditing
+        textView.isSelectable = isEditing
+        textView.onCommit = onCommit
+        textView.onCancel = onCancel
+
+        // Update attributes on existing text when not editing
+        if !isEditing {
+            let range = NSRange(location: 0, length: textView.string.count)
+            textView.textStorage?.setAttributes(attributes, range: range)
+        }
 
         if isEditing && textView.window?.firstResponder != textView {
             DispatchQueue.main.async {

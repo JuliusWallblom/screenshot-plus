@@ -309,17 +309,7 @@ final class ImageExporter {
     private func drawText(_ annotation: Annotation, offset: CGPoint = .zero) {
         let context = NSGraphicsContext.current?.cgContext
 
-        let nsColor = NSColor(annotation.strokeColor)
-        let font: NSFont
-        if annotation.fontName == "System" {
-            font = NSFont.systemFont(ofSize: annotation.fontSize, weight: .medium)
-        } else {
-            font = NSFont(name: annotation.fontName, size: annotation.fontSize) ?? NSFont.systemFont(ofSize: annotation.fontSize, weight: .medium)
-        }
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: nsColor
-        ]
+        let attributes = TextAttributeBuilder.buildAttributes(for: annotation)
         let string = NSAttributedString(string: annotation.text, attributes: attributes)
         let textSize = string.size()
 
