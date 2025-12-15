@@ -308,6 +308,61 @@ struct SettingsPopoverContent: View {
                         }
                     }
                 }
+
+                // Text stroke (outline) settings
+                HStack {
+                    Text("Stroke")
+                        .frame(width: 70, alignment: .leading)
+                    HStack(spacing: 8) {
+                        Toggle("", isOn: Binding(
+                            get: { canvasState.textStrokeColor != nil },
+                            set: { enabled in
+                                canvasState.textStrokeColor = enabled ? .black : nil
+                                updateSelectedAnnotations { annotation in
+                                    if annotation.type == .text {
+                                        annotation.textStrokeColor = canvasState.textStrokeColor
+                                    }
+                                }
+                            }
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+
+                        if canvasState.textStrokeColor != nil {
+                            ColorPicker("", selection: Binding(
+                                get: { canvasState.textStrokeColor ?? .black },
+                                set: { newColor in
+                                    canvasState.textStrokeColor = newColor
+                                    updateSelectedAnnotations { annotation in
+                                        if annotation.type == .text {
+                                            annotation.textStrokeColor = newColor
+                                        }
+                                    }
+                                }
+                            ), supportsOpacity: false)
+                            .labelsHidden()
+                        }
+                    }
+                }
+
+                if canvasState.textStrokeColor != nil {
+                    HStack {
+                        Text("Thickness")
+                            .frame(width: 70, alignment: .leading)
+                        Slider(value: $canvasState.textStrokeWidth, in: 0.5...5, step: 0.5)
+                            .frame(width: 80)
+                        Text(String(format: "%.1f", canvasState.textStrokeWidth))
+                            .frame(width: 25)
+                    }
+                    .onChange(of: canvasState.textStrokeWidth) { _, newValue in
+                        updateSelectedAnnotations { annotation in
+                            if annotation.type == .text {
+                                annotation.textStrokeWidth = newValue
+                            }
+                        }
+                    }
+                }
             }
         }
         .padding(12)

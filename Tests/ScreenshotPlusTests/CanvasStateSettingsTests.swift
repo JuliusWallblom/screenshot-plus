@@ -107,4 +107,43 @@ struct CanvasStateSettingsTests {
         #expect(canvasState.textAlignment == .center)
         #expect(canvasState.textBackgroundColor == .yellow)
     }
+
+    @Test("CanvasState has text stroke properties")
+    func canvasStateHasTextStrokeProperties() {
+        let canvasState = CanvasState()
+
+        // Default values
+        #expect(canvasState.textStrokeColor == nil)
+        #expect(canvasState.textStrokeWidth == 1.0)
+
+        // Set stroke properties
+        canvasState.textStrokeColor = .red
+        canvasState.textStrokeWidth = 2.0
+
+        #expect(canvasState.textStrokeColor == .red)
+        #expect(canvasState.textStrokeWidth == 2.0)
+    }
+
+    @Test("Selecting text annotation syncs text stroke settings")
+    func selectTextAnnotationSyncsTextStrokeSettings() {
+        let canvasState = CanvasState()
+        canvasState.textStrokeColor = nil
+        canvasState.textStrokeWidth = 1.0
+
+        var textAnnotation = Annotation(
+            type: .text,
+            startPoint: .zero,
+            endPoint: .zero,
+            strokeColor: .black,
+            strokeWidth: 1
+        )
+        textAnnotation.textStrokeColor = .blue
+        textAnnotation.textStrokeWidth = 3.0
+        canvasState.annotations.append(textAnnotation)
+
+        canvasState.selectAnnotation(textAnnotation)
+
+        #expect(canvasState.textStrokeColor == .blue)
+        #expect(canvasState.textStrokeWidth == 3.0)
+    }
 }

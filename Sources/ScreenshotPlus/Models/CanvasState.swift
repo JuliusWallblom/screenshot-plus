@@ -42,6 +42,12 @@ final class CanvasState: ObservableObject {
     @Published var textFontName: String = "System" {
         didSet { saveSettings() }
     }
+    @Published var textStrokeColor: Color? = nil {
+        didSet { saveSettings() }
+    }
+    @Published var textStrokeWidth: CGFloat = 1.0 {
+        didSet { saveSettings() }
+    }
     @Published var annotations: [Annotation] = []
     @Published var currentAnnotation: Annotation?
     @Published var selectedAnnotationIds: Set<UUID> = []
@@ -265,6 +271,8 @@ final class CanvasState: ObservableObject {
             textBackgroundPaddingBottom = annotation.textBackgroundPaddingBottom
             textBackgroundPaddingLeft = annotation.textBackgroundPaddingLeft
             textBackgroundCornerRadius = annotation.textBackgroundCornerRadius
+            textStrokeColor = annotation.textStrokeColor
+            textStrokeWidth = annotation.textStrokeWidth
         }
     }
 
