@@ -4,7 +4,7 @@ set -e
 APP_NAME="Screenshot+"
 BUNDLE_ID="com.screenshotplus.app"
 VERSION="1.0.0"
-BUILD_DIR=".build/release"
+BUILD_DIR=".build/apple/Products/Release"
 APP_BUNDLE="$APP_NAME.app"
 DIST_DIR="dist"
 DMG_NAME="$APP_NAME.dmg"
@@ -13,8 +13,8 @@ DMG_RW="$DIST_DIR/temp.dmg"
 
 echo "Building $APP_NAME v$VERSION..."
 
-# Build for release
-swift build -c release
+# Build Universal Binary for both Intel (x86_64) and Apple Silicon (arm64)
+swift build -c release --arch arm64 --arch x86_64
 
 # Create dist directory
 rm -rf "$DIST_DIR"
