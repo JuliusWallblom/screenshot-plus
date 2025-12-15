@@ -48,6 +48,8 @@ struct Annotation: Identifiable, Equatable {
     var textBackgroundPaddingLeft: CGFloat = 4
     var textBackgroundCornerRadius: CGFloat = 4
     var textAlignment: TextAlignment = .left
+    var textStrokeColor: Color? = nil
+    var textStrokeWidth: CGFloat = 1.0
 
     var boundingRect: CGRect {
         if type == .text {
