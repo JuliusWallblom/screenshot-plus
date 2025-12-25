@@ -14,8 +14,10 @@ final class ImageExporter {
 
         baseImage.draw(in: NSRect(origin: .zero, size: size))
 
+        // Draw annotations with Y-coordinate flipping
+        // SwiftUI uses Y=0 at top, NSImage lockFocus uses Y=0 at bottom
         for annotation in annotations {
-            drawAnnotation(annotation)
+            drawAnnotation(annotation, imageHeight: size.height)
         }
 
         image.unlockFocus()
@@ -72,9 +74,10 @@ final class ImageExporter {
         baseImage.draw(in: imageRect)
         context?.restoreGState()
 
-        // Draw annotations offset by padding
+        // Draw annotations offset by padding with Y-coordinate flipping
+        // SwiftUI uses Y=0 at top, NSImage lockFocus uses Y=0 at bottom
         for annotation in annotations {
-            drawAnnotation(annotation, offset: CGPoint(x: padding, y: padding))
+            drawAnnotation(annotation, offset: CGPoint(x: padding, y: padding), imageHeight: totalSize.height)
         }
 
         image.unlockFocus()
@@ -149,22 +152,46 @@ final class ImageExporter {
         }
     }
 
-    private func drawAnnotation(_ annotation: Annotation, offset: CGPoint = .zero) {
+    /// Flips a Y coordinate from SwiftUI's coordinate system (Y=0 at top) to
+    /// NSImage's coordinate system (Y=0 at bottom)
+    private func flipY(_ y: CGFloat, imageHeight: CGFloat) -> CGFloat {
+        return imageHeight - y
+    }
+
+    /// Flips a point's Y coordinate
+    private func flipPoint(_ point: CGPoint, imageHeight: CGFloat) -> CGPoint {
+        return CGPoint(x: point.x, y: flipY(point.y, imageHeight: imageHeight))
+    }
+
+    /// Flips a rect's Y coordinate (accounting for rect height)
+    private func flipRect(_ rect: CGRect, imageHeight: CGFloat) -> CGRect {
+        return CGRect(
+            x: rect.origin.x,
+            y: imageHeight - rect.origin.y - rect.height,
+            width: rect.width,
+            height: rect.height
+        )
+    }
+
+    private func drawAnnotation(_ annotation: Annotation, offset: CGPoint = .zero, imageHeight: CGFloat) {
         // Text handles its own rotation
         if annotation.type == .text {
-            drawText(annotation, offset: offset)
+            drawText(annotation, offset: offset, imageHeight: imageHeight)
             return
         }
 
         let context = NSGraphicsContext.current?.cgContext
-        let offsetRect = annotation.boundingRect.offsetBy(dx: offset.x, dy: offset.y)
-        let center = CGPoint(x: offsetRect.midX, y: offsetRect.midY)
 
-        // Apply rotation
+        // Apply offset to bounding rect, then flip Y
+        let offsetRect = annotation.boundingRect.offsetBy(dx: offset.x, dy: offset.y)
+        let flippedRect = flipRect(offsetRect, imageHeight: imageHeight)
+        let center = CGPoint(x: flippedRect.midX, y: flippedRect.midY)
+
+        // Apply rotation (note: rotation direction needs to be inverted for flipped coords)
         if annotation.rotation != 0 {
             context?.saveGState()
             context?.translateBy(x: center.x, y: center.y)
-            context?.rotate(by: annotation.rotation)
+            context?.rotate(by: -annotation.rotation) // Invert rotation for flipped Y
             context?.translateBy(x: -center.x, y: -center.y)
         }
 
@@ -173,31 +200,35 @@ final class ImageExporter {
         nsColor.setStroke()
         path.lineWidth = annotation.strokeWidth
 
+        // Flip start and end points
         let offsetStart = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
         let offsetEnd = CGPoint(x: annotation.endPoint.x + offset.x, y: annotation.endPoint.y + offset.y)
+        let flippedStart = flipPoint(offsetStart, imageHeight: imageHeight)
+        let flippedEnd = flipPoint(offsetEnd, imageHeight: imageHeight)
 
         switch annotation.type {
         case .rectangle:
-            path.appendRect(offsetRect)
+            path.appendRect(flippedRect)
         case .oval:
-            path.appendOval(in: offsetRect)
+            path.appendOval(in: flippedRect)
         case .line:
-            path.move(to: offsetStart)
-            path.line(to: offsetEnd)
+            path.move(to: flippedStart)
+            path.line(to: flippedEnd)
         case .arrow:
-            drawArrow(annotation: annotation, offset: offset)
+            drawArrow(annotation: annotation, offset: offset, imageHeight: imageHeight)
             // Arrow draws its own paths, so skip the common stroke below
             if annotation.rotation != 0 {
                 context?.restoreGState()
             }
             return
         case .pen:
-            path.move(to: offsetStart)
+            path.move(to: flippedStart)
             for point in annotation.points {
-                path.line(to: CGPoint(x: point.x + offset.x, y: point.y + offset.y))
+                let offsetPoint = CGPoint(x: point.x + offset.x, y: point.y + offset.y)
+                path.line(to: flipPoint(offsetPoint, imageHeight: imageHeight))
             }
             if annotation.points.isEmpty {
-                path.line(to: offsetEnd)
+                path.line(to: flippedEnd)
             }
         case .text:
             break // Handled above
@@ -215,19 +246,25 @@ final class ImageExporter {
         }
     }
 
-    private func drawArrow(annotation: Annotation, offset: CGPoint) {
-        let start = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
+    private func drawArrow(annotation: Annotation, offset: CGPoint, imageHeight: CGFloat) {
+        let offsetStart = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
+        let start = flipPoint(offsetStart, imageHeight: imageHeight)
+
         let end: CGPoint
         let controlPoint: CGPoint
 
         if annotation.points.isEmpty {
-            end = CGPoint(x: annotation.endPoint.x + offset.x, y: annotation.endPoint.y + offset.y)
+            let offsetEnd = CGPoint(x: annotation.endPoint.x + offset.x, y: annotation.endPoint.y + offset.y)
+            end = flipPoint(offsetEnd, imageHeight: imageHeight)
             controlPoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
         } else {
             let lastPt = annotation.points.last!
-            end = CGPoint(x: lastPt.x + offset.x, y: lastPt.y + offset.y)
-            let offsetPoints = annotation.points.map { CGPoint(x: $0.x + offset.x, y: $0.y + offset.y) }
-            controlPoint = calculateControlPoint(start: start, end: end, points: offsetPoints)
+            let offsetEnd = CGPoint(x: lastPt.x + offset.x, y: lastPt.y + offset.y)
+            end = flipPoint(offsetEnd, imageHeight: imageHeight)
+            let flippedPoints = annotation.points.map { pt in
+                flipPoint(CGPoint(x: pt.x + offset.x, y: pt.y + offset.y), imageHeight: imageHeight)
+            }
+            controlPoint = calculateControlPoint(start: start, end: end, points: flippedPoints)
         }
 
         // Calculate arrowhead angle based on curve tangent at end
@@ -306,7 +343,7 @@ final class ImageExporter {
         )
     }
 
-    private func drawText(_ annotation: Annotation, offset: CGPoint = .zero) {
+    private func drawText(_ annotation: Annotation, offset: CGPoint = .zero, imageHeight: CGFloat) {
         let context = NSGraphicsContext.current?.cgContext
 
         let nsColor = NSColor(annotation.strokeColor)
@@ -325,35 +362,47 @@ final class ImageExporter {
 
         let basePoint = CGPoint(x: annotation.startPoint.x + offset.x, y: annotation.startPoint.y + offset.y)
 
-        // Calculate draw point based on alignment
-        let drawPoint: CGPoint
+        // Calculate draw point based on alignment (in SwiftUI coordinates)
+        let alignedPoint: CGPoint
         switch annotation.textAlignment {
         case .left:
-            drawPoint = basePoint
+            alignedPoint = basePoint
         case .center:
-            drawPoint = CGPoint(x: basePoint.x - textSize.width / 2, y: basePoint.y)
+            alignedPoint = CGPoint(x: basePoint.x - textSize.width / 2, y: basePoint.y)
         case .right:
-            drawPoint = CGPoint(x: basePoint.x - textSize.width, y: basePoint.y)
+            alignedPoint = CGPoint(x: basePoint.x - textSize.width, y: basePoint.y)
         }
 
-        // Calculate background rect using actual text size with individual edge padding
+        // Calculate background rect using actual text size with individual edge padding (in SwiftUI coords)
         let paddingTop = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingTop : 0
         let paddingRight = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingRight : 0
         let paddingBottom = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingBottom : 0
         let paddingLeft = annotation.textBackgroundColor != nil ? annotation.textBackgroundPaddingLeft : 0
-        let bgRect = CGRect(
-            x: drawPoint.x - paddingLeft,
-            y: drawPoint.y - paddingBottom,
+
+        // In SwiftUI coords: bgRect top-left is at (alignedPoint.x - paddingLeft, alignedPoint.y - paddingTop)
+        let bgRectSwiftUI = CGRect(
+            x: alignedPoint.x - paddingLeft,
+            y: alignedPoint.y - paddingTop,
             width: textSize.width + paddingLeft + paddingRight,
             height: textSize.height + paddingTop + paddingBottom
         )
+
+        // Flip the background rect
+        let bgRect = flipRect(bgRectSwiftUI, imageHeight: imageHeight)
         let center = CGPoint(x: bgRect.midX, y: bgRect.midY)
 
-        // Apply rotation for text
+        // Flip the draw point - in NSImage coords, text draws from bottom-left of text bounds
+        // So we need to position at the flipped Y minus the text height (since text draws upward)
+        let flippedDrawPoint = CGPoint(
+            x: alignedPoint.x,
+            y: flipY(alignedPoint.y + textSize.height, imageHeight: imageHeight)
+        )
+
+        // Apply rotation for text (inverted for flipped Y)
         if annotation.rotation != 0 {
             context?.saveGState()
             context?.translateBy(x: center.x, y: center.y)
-            context?.rotate(by: annotation.rotation)
+            context?.rotate(by: -annotation.rotation)
             context?.translateBy(x: -center.x, y: -center.y)
         }
 
@@ -365,7 +414,7 @@ final class ImageExporter {
             bgPath.fill()
         }
 
-        string.draw(at: drawPoint)
+        string.draw(at: flippedDrawPoint)
 
         if annotation.rotation != 0 {
             context?.restoreGState()
